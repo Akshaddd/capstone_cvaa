@@ -1,0 +1,42 @@
+version: 2
+
+updates:
+  # -----------------------------
+  # Backend (Python / FastAPI)
+  # -----------------------------
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "deps(backend)"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+
+  # -----------------------------
+  # Frontend (Next.js / React)
+  # -----------------------------
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "deps(frontend)"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
