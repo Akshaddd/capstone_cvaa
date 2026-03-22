@@ -1,0 +1,40 @@
+########################################
+# General
+########################################
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+########################################
+# Environment variables
+########################################
+.env
+.env.*
+frontend/.env*
+backend/.env*
+
+########################################
+# Frontend (Next.js / React)
+########################################
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.turbo/
+
+########################################
+# Backend (Python / FastAPI)
+########################################
+backend/__pycache__/
+backend/*.py[cod]
+backend/.venv/
+backend/venv/
+backend/env/
+backend/.pytest_cache/
+
+########################################
+# IDE / Editor
+########################################
+.vscode/
+.idea/
