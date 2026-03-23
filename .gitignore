@@ -38,3 +38,7 @@ backend/.pytest_cache/
 ########################################
 .vscode/
 .idea/
+
+venv/
+__pycache__/
+*.pyc
