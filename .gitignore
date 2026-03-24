@@ -41,4 +41,4 @@ backend/.pytest_cache/
 
 venv/
 __pycache__/
-*.pyc
+*.pyc*.pt
