@@ -6,6 +6,7 @@ import os
 router = APIRouter(prefix="/inference", tags=["inference"])
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "../../models/best.pt")
+FALLBACK_MODEL = os.path.join(os.path.dirname(__file__), "../../models/yolo11n.pt")
 model = None
 
 def load_model():
@@ -13,8 +14,9 @@ def load_model():
     global model
     try:
         from ultralytics import YOLO
-        model = YOLO(MODEL_PATH)
-        print("✅ YOLO model loaded successfully!")
+        path = MODEL_PATH if os.path.exists(MODEL_PATH) else FALLBACK_MODEL
+        model = YOLO(path)
+        print(f"✅ YOLO model loaded: {path}")
     except Exception as e:
         print(f"⚠️ Model not loaded: {e}")
 

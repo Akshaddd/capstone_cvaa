@@ -19,7 +19,7 @@ def train_model():
         return
 
     # Load base YOLOv8 nano model
-    model = YOLO("yolov8n.pt")
+    model = YOLO("yolo11n.pt")
 
     # Train
     results = model.train(
