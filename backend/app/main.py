@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routers import inference
 
 app = FastAPI(
     title="Accessibility Audit API",
@@ -25,3 +26,5 @@ def root():
 @app.get("/test")
 def test():
     return {"status": "ok"}
+
+app.include_router(inference.router)    
