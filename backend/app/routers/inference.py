@@ -13,6 +13,7 @@ DSAPT_MAPPING = {
     "wheelchair": {"feature": "Wheelchair user detected", "dsapt": "Part 6", "severity": "high"},
     "bus": {"feature": "Bus/vehicle access point", "dsapt": "Part 10", "severity": "info"},
     "train": {"feature": "Train/platform access", "dsapt": "Part 11", "severity": "info"},
+    "tram": {"feature": "Tram/light rail access point", "dsapt": "Part 11", "severity": "info"},
     "bench": {"feature": "Seating available", "dsapt": "Part 8", "severity": "low"},
     "stairs": {"feature": "Stairs detected — check step-free alternative", "dsapt": "Part 6", "severity": "high"},
     "ramp": {"feature": "Ramp detected", "dsapt": "Part 6", "severity": "low"},
