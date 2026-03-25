@@ -34,7 +34,6 @@ export default function Home() {
   const [preview, setPreview] = useState<string | null>(null);
   const [results, setResults] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"report" | "raw">("report");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,26 +72,6 @@ export default function Home() {
     }
   };
 
-  const handleDownload = async () => {
-    if (!results) return;
-    setDownloading(true);
-    try {
-      const res = await fetch("http://127.0.0.1:8000/report/download", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(results),
-      });
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "accessibility_report.md";
-      a.click();
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
     <>
       <style>{`
@@ -114,9 +93,6 @@ export default function Home() {
         .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
         .btn-ghost { background: transparent; color: #86868B; border: none; border-radius: 980px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; font-family: inherit; }
         .btn-ghost:hover { background: rgba(0,0,0,0.05); color: #1D1D1F; }
-        .btn-download { background: #34C759; color: white; border: none; border-radius: 980px; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; font-family: inherit; white-space: nowrap; }
-        .btn-download:hover { background: #2DB54D; }
-        .btn-download:disabled { opacity: 0.4; cursor: not-allowed; }
         .tab-btn { padding: 8px 16px; border-radius: 980px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; font-family: inherit; background: transparent; color: #86868B; white-space: nowrap; }
         .tab-btn.active { background: white; color: #1D1D1F; box-shadow: 0 1px 8px rgba(0,0,0,0.10); }
         .feature-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 14px; margin-bottom: 8px; border: 1px solid transparent; transition: transform 0.15s ease; gap: 12px; }
@@ -131,6 +107,7 @@ export default function Home() {
         .fade-in { animation: fadeUp 0.4s ease forwards; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .summary-banner { border-radius: 14px; padding: 16px 20px; font-size: 15px; line-height: 1.5; margin-bottom: 24px; }
+        .leaflet-container { font-family: 'DM Sans', sans-serif; border-radius: 20px; }
         @media (max-width: 600px) {
           .nav { padding: 0 20px; }
           .nav-links { gap: 16px; }
@@ -144,8 +121,7 @@ export default function Home() {
       {/* Nav */}
       <nav className="nav">
         <div className="nav-brand">
-          <div className="nav-logo">♿</div>
-          <span className="nav-title">DSAPT Scanner</span>
+          <span className="nav-title" style={{ fontSize: 18 }}>DSAPT Scanner</span>
         </div>
         <div className="nav-links">
           <a href="/" className="nav-link">Home</a>
@@ -153,7 +129,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: 760, margin: "0 auto", padding: "60px 24px 80px" }}>
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "60px 24px 100px" }}>
 
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: 48 }}>
@@ -204,20 +180,14 @@ export default function Home() {
 
         {/* Results */}
         {results && (
-          <div className="fade-in glass-card" style={{ padding: 32 }}>
-
-            {/* Header */}
+          <div className="fade-in glass-card" style={{ padding: 32, marginBottom: 20 }}>
             <div className="result-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
               <div>
                 <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em" }}>Audit Report</h2>
                 <p style={{ fontSize: 13, color: "#86868B", marginTop: 2 }}>{results.filename}</p>
               </div>
-              <button className="btn-download" onClick={handleDownload} disabled={downloading}>
-                {downloading ? "Generating…" : "↓ Download Report"}
-              </button>
             </div>
 
-            {/* Summary */}
             {results.summary && (
               <div className="summary-banner" style={{
                 background: results.severity_summary.high > 0 ? "#FFF8F0" : "#F0FFF4",
@@ -228,7 +198,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Stats */}
             <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
               {(["high","medium","low","info"] as const).map(k => {
                 const cfg = severityConfig[k];
@@ -241,7 +210,6 @@ export default function Home() {
               })}
             </div>
 
-            {/* Tabs */}
             <div style={{ display: "flex", gap: 4, background: "#F5F5F7", borderRadius: 980, padding: 4, marginBottom: 20, width: "fit-content" }}>
               <button className={`tab-btn ${activeTab === "report" ? "active" : ""}`} onClick={() => setActiveTab("report")}>
                 ♿ Report ({results.accessibility_features})
@@ -251,7 +219,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Report Tab */}
             {activeTab === "report" && (
               <div>
                 {results.accessibility_report.length === 0 ? (
@@ -281,7 +248,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Raw Tab */}
             {activeTab === "raw" && (
               <div>
                 {results.raw_detections.map((d, i) => (
@@ -297,10 +263,57 @@ export default function Home() {
             )}
           </div>
         )}
+
+        {/* Melbourne Map */}
+        <div style={{ textAlign: "center", marginBottom: 28, marginTop: 40 }}>
+          <p style={{ fontSize: 12, fontWeight: 500, color: "#007AFF", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+            Coverage Area
+          </p>
+          <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "clamp(28px,4vw,40px)", fontWeight: 400, letterSpacing: "-0.02em", color: "#1D1D1F", marginBottom: 12 }}>
+            Melbourne Transport Network
+          </h2>
+          <p style={{ fontSize: 15, color: "#6E6E73", maxWidth: 440, margin: "0 auto" }}>
+            The scanner is designed for use across Melbourne's public transport infrastructure.
+          </p>
+        </div>
+
+        <div className="glass-card" style={{ overflow: "hidden", borderRadius: 20, marginBottom: 20 }}>
+          <div id="melbourne-map" style={{ height: 480, width: "100%" }} />
+        </div>
+
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            if (typeof window === 'undefined') return;
+            function initMap() {
+              var el = document.getElementById('melbourne-map');
+              if (!window.L || !el || el._leaflet_id) return;
+              var map = L.map('melbourne-map', { zoomControl: true, scrollWheelZoom: false }).setView([-37.8136, 144.9631], 11);
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors', maxZoom: 18
+              }).addTo(map);
+            }
+            if (!document.getElementById('leaflet-css')) {
+              var link = document.createElement('link');
+              link.id = 'leaflet-css';
+              link.rel = 'stylesheet';
+              link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+              document.head.appendChild(link);
+            }
+            if (!window.L) {
+              var script = document.createElement('script');
+              script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+              script.onload = function() { setTimeout(initMap, 100); };
+              document.head.appendChild(script);
+            } else {
+              setTimeout(initMap, 100);
+            }
+          })();
+        `}} />
+
       </main>
 
-      <footer style={{ textAlign: "center", padding: 24, fontSize: 12, color: "#86868B", borderTop: "0.5px solid rgba(0,0,0,0.08)" }}>
-        DSAPT Accessibility Scanner · La Trobe University · Proof of Concept
+      <footer style={{ textAlign: "center", padding: 24, fontSize: 12, color: "#86868B", borderTop: "0.5px solid rgba(0,0,0,0.08)", position: "fixed", bottom: 0, left: 0, right: 0, background: "#F5F5F7" }}>
+        DSAPT Accessibility Scanner · RSNA
       </footer>
     </>
   );
