@@ -5,7 +5,7 @@ import io
 router = APIRouter(prefix="/inference", tags=["inference"])
 
 # Placeholder — Nadil will provide the trained model path
-MODEL_PATH = "models/best.pt"
+MODEL_PATH = "yolov8n.pt"
 model = None
 
 def load_model():
@@ -16,6 +16,8 @@ def load_model():
         model = YOLO(MODEL_PATH)
     except Exception as e:
         print(f"Model not loaded yet: {e}")
+
+load_model()
 
 @router.post("/scan")
 async def scan_image(file: UploadFile = File(...)):
