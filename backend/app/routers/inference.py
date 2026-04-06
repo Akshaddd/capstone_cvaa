@@ -5,7 +5,7 @@ import io
 router = APIRouter(prefix="/inference", tags=["inference"])
 
 # Placeholder — Nadil will provide the trained model path
-MODEL_PATH = "yolov8n.pt"
+MODEL_PATH = "yolo26s.pt"
 model = None
 
 def load_model():

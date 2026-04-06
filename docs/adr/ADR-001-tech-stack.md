@@ -10,7 +10,7 @@ for the DSAPT accessibility scanner proof of concept.
 
 ## Decisions
 - **Backend:** FastAPI (Python)
-- **CV Model:** YOLOv8
+- **CV Model:** YOLO26s
 - **Frontend:** Next.js / React
 - **Database:** TBD (finalised Sprint 1)
 - **CI/CD:** GitHub Actions

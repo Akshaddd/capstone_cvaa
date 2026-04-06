@@ -7,7 +7,7 @@ MODEL_OUTPUT = "models/best.pt"
 
 def train_model():
     """
-    Train YOLOv8n on the DSAPT accessibility features dataset.
+    Train YOLO26s on the DSAPT accessibility features dataset.
     Run this script from the backend/ directory.
     """
     print("🚀 Starting YOLO training...")
@@ -18,8 +18,8 @@ def train_model():
         print("❌ data.yaml not found! Check datasets/ folder.")
         return
 
-    # Load base YOLOv8 nano model
-    model = YOLO("yolov8n.pt")
+    # Load base YOLO26 small model
+    model = YOLO("yolo26s.pt")
 
     # Train
     results = model.train(
