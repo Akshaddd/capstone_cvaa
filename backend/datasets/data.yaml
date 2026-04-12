@@ -1,0 +1,18 @@
+# YOLO Dataset Configuration
+# DSAPT Accessibility Features Dataset
+
+path: ./datasets  # root dataset directory
+train: images/train  # training images
+val: images/val      # validation images
+
+# Number of classes
+nc: 6
+
+# Class names — aligned with DSAPT accessibility features
+names:
+  0: ramp
+  1: tactile_ground_surface
+  2: handrail
+  3: step_free_access
+  4: accessible_signage
+  5: platform_edge
