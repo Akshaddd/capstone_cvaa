@@ -1,12 +1,39 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from PIL import Image, UnidentifiedImageError
 import io
+import os
+import cv2
+import numpy as np
 
 router = APIRouter(prefix="/inference", tags=["inference"])
 
 # Placeholder — Nadil will provide the trained model path
 MODEL_PATH = "yolo26s.pt"
 model = None
+
+def draw_boxes(image, detections):
+    """Draw bounding boxes and labels onto the uploaded image."""
+    img = np.array(image)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+    for det in detections:
+        x1, y1, x2, y2 = map(int, det["bbox"])
+        label = f"{det['class']} {det['confidence']:.2f}"
+
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        text_y = y1 - 10 if y1 - 10 > 20 else y1 + 20
+        cv2.putText(
+            img,
+            label,
+            (x1, text_y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            2,
+        )
+
+    return img
 
 def load_model():
     """Load YOLO model — call this once model is trained."""
@@ -41,6 +68,7 @@ async def scan_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Could not process image")
 
     width, height = image.size
+    os.makedirs("outputs", exist_ok=True)
 
     # If model not loaded yet, return placeholder
     if model is None:
@@ -72,6 +100,14 @@ async def scan_image(file: UploadFile = File(...)):
                     "bbox": bbox,
                 })
 
+        boxed_image = draw_boxes(image, detections)
+
+        safe_filename = (file.filename or "uploaded_image").rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+        output_filename = f"boxed_{safe_filename.rsplit('.', 1)[0]}.jpg"
+        output_path = f"outputs/{output_filename}"
+
+        cv2.imwrite(output_path, boxed_image)
+
         return {
             "status": "success",
             "filename": file.filename,
@@ -80,6 +116,7 @@ async def scan_image(file: UploadFile = File(...)):
                 "height": height,
             },
             "detections": detections,
+            "boxed_image_path": output_path,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}")
