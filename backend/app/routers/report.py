@@ -19,7 +19,7 @@ def generate_report(request: ReportRequest):
     return build_report(request)
 
 
-@router.post("/from-image", response_model=ReportResponse)
+@router.post("/from-image")
 async def generate_report_from_image(file: UploadFile = File(...)):
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
@@ -35,10 +35,13 @@ async def generate_report_from_image(file: UploadFile = File(...)):
     # Try using YOLO inference
     try:
         inference_result = await inference.scan_image(file=file)
+        boxed_image_path = inference_result.get("boxed_image_path")
         detections = inference_result.get("detections", [])
         print("DETECTIONS FROM YOLO:", detections)
     except Exception as e:
         print("Inference failed, using fallback:", e)
+
+        boxed_image_path = None
 
         # fallback so system doesn't crash
         detections = [
@@ -53,4 +56,9 @@ async def generate_report_from_image(file: UploadFile = File(...)):
         notes="Generated from image"
     )
 
-    return build_report(report_request)
+    report = build_report(report_request)
+
+    return {
+        **report.dict(),
+        "boxed_image_path": boxed_image_path,
+    }

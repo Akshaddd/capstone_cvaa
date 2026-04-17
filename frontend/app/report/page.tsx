@@ -12,6 +12,7 @@ type ReportResponse = {
   summary: string;
   detected_features: DetectedFeature[];
   missing_features: string[];
+  boxed_image_path?: string;
 };
 
 export default function ReportPage() {
@@ -20,6 +21,7 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [boxedImageUrl, setBoxedImageUrl] = useState<string | null>(null);
 
   const fileLabel = useMemo(() => {
     if (!file) return "No image selected";
@@ -38,6 +40,7 @@ export default function ReportPage() {
     setLoading(true);
     setError("");
     setReport(null);
+    setBoxedImageUrl(null);
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -48,6 +51,7 @@ export default function ReportPage() {
       });
 
       const data = await res.json();
+      console.log("report response:", data);
 
       if (!res.ok) {
         setError(data.detail || "Something went wrong.");
@@ -55,6 +59,15 @@ export default function ReportPage() {
       }
 
       setReport(data);
+
+      if (data.boxed_image_path) {
+        const normalisedPath = data.boxed_image_path.startsWith("/")
+          ? data.boxed_image_path
+          : `/${data.boxed_image_path}`;
+
+        setBoxedImageUrl(`${API_URL}${encodeURI(normalisedPath)}`);
+        console.log("boxed image url:", `${API_URL}${encodeURI(normalisedPath)}`);
+      }
     } catch {
       setError("Could not connect to backend.");
     } finally {
@@ -228,6 +241,7 @@ export default function ReportPage() {
                   const selected = e.target.files?.[0] || null;
                   setFile(selected);
                   setReport(null);
+                  setBoxedImageUrl(null);
                   setError("");
                   if (preview) {
                     URL.revokeObjectURL(preview);
@@ -355,6 +369,23 @@ export default function ReportPage() {
                   <div style={{ fontSize: 30, fontWeight: 800, marginTop: 6 }}>{report.detected_features.length}</div>
                 </div>
               </div>
+              {boxedImageUrl && (
+                <div
+                  style={{
+                    marginTop: 24,
+                    borderRadius: 20,
+                    overflow: "hidden",
+                    border: "1px solid #e2e8f0",
+                    background: "#f8fafc",
+                  }}
+                >
+                  <img
+                    src={boxedImageUrl}
+                    alt="Detection result with bounding boxes"
+                    style={{ width: "100%", maxHeight: 460, objectFit: "contain", display: "block" }}
+                  />
+                </div>
+              )}
             </div>
 
             <div
