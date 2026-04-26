@@ -248,6 +248,9 @@ async def scan_combined(file: UploadFile = File(...)):
                         "source_model": "base_yolo",
                     })
 
+        # Helper list: base YOLO classes
+        base_classes = [det["class"] for det in detections if det.get("source_model") == "base_yolo"]
+
         if wheelchair_model is not None:
             wheelchair_results = wheelchair_model.predict(image, conf=0.25)
             models_used.append("wheelchair_yolo")
@@ -266,21 +269,24 @@ async def scan_combined(file: UploadFile = File(...)):
                     })
 
         if tram_model is not None:
-            tram_results = tram_model.predict(image, conf=0.25)
+            tram_results = tram_model.predict(image, conf=0.6)
             models_used.append("tram_yolo")
 
             for result in tram_results:
                 for box in result.boxes:
-                    class_id = int(box.cls[0])
                     confidence = round(float(box.conf[0]), 4)
                     bbox = [round(float(x), 2) for x in box.xyxy[0].tolist()]
 
-                    detections.append({
-                        "class": "tram",
-                        "confidence": confidence,
-                        "bbox": bbox,
-                        "source_model": "tram_yolo",
-                    })
+                    # Only allow tram if base YOLO thinks it's train-like
+                    is_train_context = any(c == "train" for c in base_classes)
+
+                    if confidence > 0.6 and is_train_context:
+                        detections.append({
+                            "class": "tram",
+                            "confidence": confidence,
+                            "bbox": bbox,
+                            "source_model": "tram_yolo",
+                        })
 
         if not models_used:
             return {
@@ -310,7 +316,7 @@ async def scan_combined(file: UploadFile = File(...)):
             ]
 
         tram_detected = any(
-            det["class"] == "tram" and det["source_model"] == "tram_yolo"
+            det["class"] == "tram" and det["source_model"] == "tram_yolo" and det["confidence"] > 0.6
             for det in detections
         )
 
