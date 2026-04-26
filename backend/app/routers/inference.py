@@ -1,3 +1,5 @@
+import cv2
+import numpy as np
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from PIL import Image, UnidentifiedImageError
 import io
@@ -21,6 +23,10 @@ tram_model = None
 
 RAMP_MODEL_PATH = "models/ramp.pt"
 ramp_model = None
+
+# Tactile paving model
+TACTILE_MODEL_PATH = "models/tactile.pt"
+tactile_model = None
 
 def draw_boxes(image, detections):
     """Draw bounding boxes and readable labels onto the uploaded image."""
@@ -92,7 +98,7 @@ def build_output_path(filename, prefix="boxed"):
 
 def load_model():
     """Load the base YOLO model and the custom wheelchair model."""
-    global model, wheelchair_model, tram_model, ramp_model
+    global model, wheelchair_model, tram_model, ramp_model, tactile_model
 
     try:
         model = YOLO(MODEL_PATH)
@@ -133,6 +139,17 @@ def load_model():
     except Exception as e:
         ramp_model = None
         print(f"Ramp model not loaded yet: {e}")
+
+    try:
+        if os.path.exists(TACTILE_MODEL_PATH):
+            tactile_model = YOLO(TACTILE_MODEL_PATH)
+            print(f"Tactile model loaded from {TACTILE_MODEL_PATH}")
+        else:
+            tactile_model = None
+            print(f"Tactile model not found at {TACTILE_MODEL_PATH}")
+    except Exception as e:
+        tactile_model = None
+        print(f"Tactile model not loaded yet: {e}")
 
 load_model()
 
@@ -405,6 +422,23 @@ async def scan_combined(file: UploadFile = File(...)):
                         "bbox": bbox,
                         "source_model": "ramp_yolo",
                     })
+
+        if tactile_model is not None:
+            tactile_results = tactile_model.predict(image, conf=0.2)
+            models_used.append("tactile_yolo")
+
+            for result in tactile_results:
+                for box in result.boxes:
+                    confidence = round(float(box.conf[0]), 4)
+                    bbox = [round(float(x), 2) for x in box.xyxy[0].tolist()]
+
+                    if confidence > 0.3:
+                        detections.append({
+                            "class": "tactile_paving",
+                            "confidence": confidence,
+                            "bbox": bbox,
+                            "source_model": "tactile_yolo",
+                        })
 
         if not models_used:
             return {
