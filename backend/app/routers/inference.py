@@ -9,7 +9,7 @@ from ultralytics import YOLO
 router = APIRouter(prefix="/inference", tags=["inference"])
 
 # Generic/base YOLO model
-MODEL_PATH = "yolo26s.pt"
+MODEL_PATH = "models/yolo26s.pt"
 model = None
 
 # Custom fine-tuned wheelchair model
