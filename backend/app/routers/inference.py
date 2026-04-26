@@ -19,26 +19,65 @@ wheelchair_model = None
 TRAM_MODEL_PATH = "models/tram.pt"
 tram_model = None
 
+RAMP_MODEL_PATH = "models/ramp.pt"
+ramp_model = None
+
 def draw_boxes(image, detections):
-    """Draw bounding boxes and labels onto the uploaded image."""
+    """Draw bounding boxes and readable labels onto the uploaded image."""
     img = np.array(image)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
     for det in detections:
         x1, y1, x2, y2 = map(int, det["bbox"])
-        label = f"{det['class']} {det['confidence']:.2f}"
 
-        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        # Keep box coordinates inside the image boundaries
+        img_height, img_width = img.shape[:2]
+        x1 = max(0, min(x1, img_width - 1))
+        y1 = max(0, min(y1, img_height - 1))
+        x2 = max(0, min(x2, img_width - 1))
+        y2 = max(0, min(y2, img_height - 1))
 
-        text_y = y1 - 10 if y1 - 10 > 20 else y1 + 20
+        class_name = str(det.get("class", "object"))
+        confidence = float(det.get("confidence", 0))
+        label = f"{class_name} {confidence:.2f}"
+
+        box_color = (0, 255, 0)
+        text_color = (255, 255, 255)
+        label_bg_color = (0, 120, 0)
+
+        cv2.rectangle(img, (x1, y1), (x2, y2), box_color, 2)
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.6
+        thickness = 2
+        padding = 6
+
+        text_width, text_height = cv2.getTextSize(label, font, font_scale, thickness)[0]
+
+        label_x1 = x1
+        label_y1 = y1 - text_height - (padding * 2)
+        label_x2 = x1 + text_width + (padding * 2)
+        label_y2 = y1
+
+        # If label would go above the image, place it inside the box instead
+        if label_y1 < 0:
+            label_y1 = y1
+            label_y2 = y1 + text_height + (padding * 2)
+
+        # If label goes beyond the right edge, shift it left
+        if label_x2 > img_width:
+            label_x2 = img_width - 1
+            label_x1 = max(0, label_x2 - text_width - (padding * 2))
+
+        cv2.rectangle(img, (label_x1, label_y1), (label_x2, label_y2), label_bg_color, -1)
         cv2.putText(
             img,
             label,
-            (x1, text_y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 255, 0),
-            2,
+            (label_x1 + padding, label_y2 - padding),
+            font,
+            font_scale,
+            text_color,
+            thickness,
         )
 
     return img
@@ -53,7 +92,7 @@ def build_output_path(filename, prefix="boxed"):
 
 def load_model():
     """Load the base YOLO model and the custom wheelchair model."""
-    global model, wheelchair_model, tram_model
+    global model, wheelchair_model, tram_model, ramp_model
 
     try:
         model = YOLO(MODEL_PATH)
@@ -83,6 +122,17 @@ def load_model():
     except Exception as e:
         tram_model = None
         print(f"Tram model not loaded yet: {e}")
+
+    try:
+        if os.path.exists(RAMP_MODEL_PATH):
+            ramp_model = YOLO(RAMP_MODEL_PATH)
+            print(f"Ramp model loaded from {RAMP_MODEL_PATH}")
+        else:
+            ramp_model = None
+            print(f"Ramp model not found at {RAMP_MODEL_PATH}")
+    except Exception as e:
+        ramp_model = None
+        print(f"Ramp model not loaded yet: {e}")
 
 load_model()
 
@@ -207,6 +257,57 @@ async def scan_wheelchair(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Wheelchair inference failed: {str(e)}")
 
+@router.post("/scan-ramp")
+async def scan_ramp(file: UploadFile = File(...)):
+    """
+    Receive an image and return detection results from the fine-tuned ramp model.
+    This endpoint is kept separate so the current generic scan flow is not affected.
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    contents = await file.read()
+    try:
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Invalid image file")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not process image")
+
+    width, height = image.size
+
+    if ramp_model is None:
+        raise HTTPException(status_code=500, detail="Ramp model not loaded")
+
+    try:
+        results = ramp_model.predict(image, conf=0.25)
+        detections = []
+
+        for result in results:
+            for box in result.boxes:
+                class_id = int(box.cls[0])
+                confidence = round(float(box.conf[0]), 4)
+                bbox = [round(float(x), 2) for x in box.xyxy[0].tolist()]
+
+                detections.append({
+                    "class": result.names[class_id],
+                    "confidence": confidence,
+                    "bbox": bbox,
+                })
+
+        return {
+            "status": "success",
+            "filename": file.filename,
+            "image_size": {
+                "width": width,
+                "height": height,
+            },
+            "detections": detections,
+            "total_detections": len(detections),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ramp inference failed: {str(e)}")
+
 @router.post("/scan-combined")
 async def scan_combined(file: UploadFile = File(...)):
     """
@@ -280,6 +381,23 @@ async def scan_combined(file: UploadFile = File(...)):
                         "confidence": confidence,
                         "bbox": bbox,
                         "source_model": "tram_yolo",
+                    })
+
+        if ramp_model is not None:
+            ramp_results = ramp_model.predict(image, conf=0.25)
+            models_used.append("ramp_yolo")
+
+            for result in ramp_results:
+                for box in result.boxes:
+                    class_id = int(box.cls[0])
+                    confidence = round(float(box.conf[0]), 4)
+                    bbox = [round(float(x), 2) for x in box.xyxy[0].tolist()]
+
+                    detections.append({
+                        "class": result.names[class_id],
+                        "confidence": confidence,
+                        "bbox": bbox,
+                        "source_model": "ramp_yolo",
                     })
 
         if not models_used:
