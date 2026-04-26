@@ -1,0 +1,6 @@
+tactile_paving
+ramp
+stairs
+handrail
+platform_edge
+step_gap

@@ -265,6 +265,19 @@ async def scan_combined(file: UploadFile = File(...)):
                 "models_used": [],
             }
 
+        # If the custom wheelchair model detects a wheelchair, remove generic bicycle detections.
+        # This prevents the base YOLO model from mislabelling wheelchairs as bicycles.
+        wheelchair_detected = any(
+            det["class"] == "wheelchair" and det["source_model"] == "wheelchair_yolo"
+            for det in detections
+        )
+
+        if wheelchair_detected:
+            detections = [
+                det for det in detections
+                if not (det["class"] == "bicycle" and det["source_model"] == "base_yolo")
+            ]
+
         boxed_image = draw_boxes(image, detections)
         _, output_path = build_output_path(file.filename, prefix="combined_boxed")
         cv2.imwrite(output_path, boxed_image)
