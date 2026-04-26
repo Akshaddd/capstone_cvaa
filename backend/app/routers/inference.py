@@ -40,6 +40,14 @@ def draw_boxes(image, detections):
 
     return img
 
+def build_output_path(filename, prefix="boxed"):
+    """Create a safe output path for saved visualisation images."""
+    safe_filename = (filename or "uploaded_image").rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+    safe_filename = safe_filename.replace(" ", "_")
+    base_name = safe_filename.rsplit(".", 1)[0]
+    output_filename = f"{prefix}_{base_name}.jpg"
+    return output_filename, f"outputs/{output_filename}"
+
 def load_model():
     """Load the base YOLO model and the custom wheelchair model."""
     global model, wheelchair_model
@@ -118,10 +126,7 @@ async def scan_image(file: UploadFile = File(...)):
 
         boxed_image = draw_boxes(image, detections)
 
-        safe_filename = (file.filename or "uploaded_image").rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
-        output_filename = f"boxed_{safe_filename.rsplit('.', 1)[0]}.jpg"
-        output_path = f"outputs/{output_filename}"
-
+        _, output_path = build_output_path(file.filename, prefix="boxed")
         cv2.imwrite(output_path, boxed_image)
 
         return {
@@ -187,3 +192,94 @@ async def scan_wheelchair(file: UploadFile = File(...)):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Wheelchair inference failed: {str(e)}")
+
+@router.post("/scan-combined")
+async def scan_combined(file: UploadFile = File(...)):
+    """
+    Run both the base YOLO model and the custom wheelchair model on the same image.
+    This returns one merged detection response and one boxed output image.
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    contents = await file.read()
+    try:
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Invalid image file")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not process image")
+
+    width, height = image.size
+    os.makedirs("outputs", exist_ok=True)
+
+    detections = []
+    models_used = []
+
+    try:
+        if model is not None:
+            base_results = model(image)
+            models_used.append("base_yolo")
+
+            for result in base_results:
+                for box in result.boxes:
+                    class_id = int(box.cls[0])
+                    confidence = round(float(box.conf[0]), 4)
+                    bbox = [round(float(x), 2) for x in box.xyxy[0].tolist()]
+
+                    detections.append({
+                        "class": result.names[class_id],
+                        "confidence": confidence,
+                        "bbox": bbox,
+                        "source_model": "base_yolo",
+                    })
+
+        if wheelchair_model is not None:
+            wheelchair_results = wheelchair_model.predict(image, conf=0.25)
+            models_used.append("wheelchair_yolo")
+
+            for result in wheelchair_results:
+                for box in result.boxes:
+                    class_id = int(box.cls[0])
+                    confidence = round(float(box.conf[0]), 4)
+                    bbox = [round(float(x), 2) for x in box.xyxy[0].tolist()]
+
+                    detections.append({
+                        "class": result.names[class_id],
+                        "confidence": confidence,
+                        "bbox": bbox,
+                        "source_model": "wheelchair_yolo",
+                    })
+
+        if not models_used:
+            return {
+                "status": "model_not_ready",
+                "message": "No detection models are currently loaded",
+                "filename": file.filename,
+                "image_size": {
+                    "width": width,
+                    "height": height,
+                },
+                "detections": [],
+                "total_detections": 0,
+                "models_used": [],
+            }
+
+        boxed_image = draw_boxes(image, detections)
+        _, output_path = build_output_path(file.filename, prefix="combined_boxed")
+        cv2.imwrite(output_path, boxed_image)
+
+        return {
+            "status": "success",
+            "filename": file.filename,
+            "image_size": {
+                "width": width,
+                "height": height,
+            },
+            "detections": detections,
+            "total_detections": len(detections),
+            "models_used": models_used,
+            "boxed_image_path": output_path,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Combined inference failed: {str(e)}")
