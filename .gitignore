@@ -40,4 +40,4 @@ backend/.pytest_cache/
 .idea/
 venv/
 __pycache__/
-*.pyc
+*.pycbackend/outputs/
