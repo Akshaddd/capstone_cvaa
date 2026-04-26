@@ -16,6 +16,9 @@ model = None
 WHEELCHAIR_MODEL_PATH = "models/wheelchair.pt"
 wheelchair_model = None
 
+TRAM_MODEL_PATH = "models/tram.pt"
+tram_model = None
+
 def draw_boxes(image, detections):
     """Draw bounding boxes and labels onto the uploaded image."""
     img = np.array(image)
@@ -50,7 +53,7 @@ def build_output_path(filename, prefix="boxed"):
 
 def load_model():
     """Load the base YOLO model and the custom wheelchair model."""
-    global model, wheelchair_model
+    global model, wheelchair_model, tram_model
 
     try:
         model = YOLO(MODEL_PATH)
@@ -69,6 +72,17 @@ def load_model():
     except Exception as e:
         wheelchair_model = None
         print(f"Wheelchair model not loaded yet: {e}")
+
+    try:
+        if os.path.exists(TRAM_MODEL_PATH):
+            tram_model = YOLO(TRAM_MODEL_PATH)
+            print(f"Tram model loaded from {TRAM_MODEL_PATH}")
+        else:
+            tram_model = None
+            print(f"Tram model not found at {TRAM_MODEL_PATH}")
+    except Exception as e:
+        tram_model = None
+        print(f"Tram model not loaded yet: {e}")
 
 load_model()
 
@@ -251,6 +265,23 @@ async def scan_combined(file: UploadFile = File(...)):
                         "source_model": "wheelchair_yolo",
                     })
 
+        if tram_model is not None:
+            tram_results = tram_model.predict(image, conf=0.25)
+            models_used.append("tram_yolo")
+
+            for result in tram_results:
+                for box in result.boxes:
+                    class_id = int(box.cls[0])
+                    confidence = round(float(box.conf[0]), 4)
+                    bbox = [round(float(x), 2) for x in box.xyxy[0].tolist()]
+
+                    detections.append({
+                        "class": "tram",
+                        "confidence": confidence,
+                        "bbox": bbox,
+                        "source_model": "tram_yolo",
+                    })
+
         if not models_used:
             return {
                 "status": "model_not_ready",
@@ -276,6 +307,20 @@ async def scan_combined(file: UploadFile = File(...)):
             detections = [
                 det for det in detections
                 if not (det["class"] == "bicycle" and det["source_model"] == "base_yolo")
+            ]
+
+        tram_detected = any(
+            det["class"] == "tram" and det["source_model"] == "tram_yolo"
+            for det in detections
+        )
+
+        if tram_detected:
+            detections = [
+                det for det in detections
+                if not (
+                    det["source_model"] == "base_yolo"
+                    and det["class"] in ["train", "bus"]
+                )
             ]
 
         boxed_image = draw_boxes(image, detections)
