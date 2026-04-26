@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>MyAccess — Scan Stop</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon"><svg width="16" height="16" viewBox="0 0 34 34" fill="none"><rect x="5" y="9" width="20" height="14" rx="3" fill="white"/><rect x="8" y="12" width="5" height="4" rx="1" fill="#0D7A5F"/><rect x="15" y="12" width="5" height="4" rx="1" fill="#0D7A5F"/><circle cx="10" cy="24" r="2" fill="white"/><circle cx="20" cy="24" r="2" fill="white"/><circle cx="27" cy="9" r="5" fill="white"/><circle cx="27" cy="9" r="2.5" fill="#0D7A5F"/></svg></div>
+      <div><div class="sb-logo-name">MyAccess</div><div class="sb-logo-sub">Melbourne network</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Navigate</div>
+      <div class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Accessibility map</div>
+      <div class="sb-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01"/></svg>Scan stop</div>
+      <div class="sb-section">My data</div>
+      <div class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>My reports</div>
+      <div class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>History</div>
+      <div class="sb-section">Account</div>
+      <div class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Settings</div>
+    </nav>
+    <div class="sb-user">
+      <div class="sb-avatar">JD</div>
+      <div><div class="sb-user-name">J. Doe</div><div class="sb-user-role">Public user</div></div>
+      <div class="sb-online"></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <a href="map.html" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back to map
+        </a>
+        <span style="color:var(--text3)">|</span>
+        <div><div class="topbar-title">Scan stop</div><div class="topbar-sub">Flinders St / Elizabeth St — Stop 1</div></div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-outline">Change stop</button>
+        <button class="btn btn-primary">Analyse photos</button>
+      </div>
+    </div>
+
+    <div class="content-area no-pad">
+      <!-- Upload screen (shown first) -->
+      <div id="upload-screen" style="height:calc(100vh - 50px);display:flex;flex-direction:row">
+
+        <!-- Upload left -->
+        <div class="scan-left">
+          <div class="drop-zone" id="dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+            <div class="uploaded-thumbs" id="thumbs">
+              <div class="thumb" style="background:#0D7A5F">stop-front.jpg<div class="thumb-x" onclick="removeThumb(this)">×</div></div>
+              <div class="thumb" style="background:#5baee0">tactile.jpg<div class="thumb-x" onclick="removeThumb(this)">×</div></div>
+              <div class="thumb thumb-add">+</div>
+            </div>
+            <div class="drop-counter" id="counter">2 / 6 photos</div>
+            <div class="drop-zone-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0D7A5F" stroke-width="2" stroke-linecap="round">
+                <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
+                <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+              </svg>
+            </div>
+            <div>
+              <div class="drop-zone-title">Drop photos here to analyse</div>
+              <div class="drop-zone-sub" style="margin-top:5px">Drag &amp; drop photos of the stop, or click to browse</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <label class="btn btn-primary" style="cursor:pointer;font-size:12px">
+                Browse files
+                <input type="file" multiple accept="image/*" style="display:none" onchange="addFiles(this.files)">
+              </label>
+              <span style="font-size:11px;color:var(--text3)">or paste from clipboard</span>
+            </div>
+            <div class="drop-zone-badges">
+              <span class="drop-badge">JPG</span>
+              <span class="drop-badge">PNG</span>
+              <span class="drop-badge">HEIC</span>
+              <span style="font-size:10px;color:var(--text3)">· Up to 20MB · Max 6 photos</span>
+            </div>
+          </div>
+
+          <!-- Stop info -->
+          <div class="scan-info">
+            <div>
+              <div class="si-name">Flinders St / Elizabeth St</div>
+              <div class="si-sub">Stop 1 · Routes 70, 75 · CBD, Melbourne</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <span class="chip chip-blue">Route 70</span>
+              <span class="chip chip-blue">Route 75</span>
+              <span class="chip chip-muted">Selected stop</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload right: guide panel -->
+        <div class="scan-right">
+          <div style="padding:14px 18px;border-bottom:.5px solid var(--border)">
+            <div style="font-size:13px;font-weight:500">Photo guide</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">What to include in your photos</div>
+          </div>
+          <div style="padding:12px 16px;flex:1">
+            <div style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">What to photograph</div>
+            <div class="check-list">
+              <div class="check-item">
+                <div class="check-box done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div><div class="check-txt">Tactile ground surface</div><div class="check-guide">Photo of the boarding zone floor</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Kerb ramp</div><div class="check-guide">Full ramp including gradient</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Accessible signage</div><div class="check-guide">Stop sign and route info boards</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Platform edge / gap</div><div class="check-guide">Close-up of tram boarding gap</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Path of travel</div><div class="check-guide">Approach from footpath to stop</div></div>
+              </div>
+            </div>
+            <div style="background:#eef6f2;border-radius:9px;padding:12px 14px;margin-top:14px">
+              <div style="font-size:11px;color:#3a6a52;line-height:1.5"><strong>Tip:</strong> Take photos in good lighting. Include as much of the stop as possible — our AI does the rest.</div>
+            </div>
+          </div>
+          <div style="padding:14px 16px;border-top:.5px solid var(--border)">
+            <button class="btn btn-primary" style="width:100%;font-size:13px;padding:12px" onclick="startScan()">Analyse photos</button>
+            <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px">AI checks all 5 accessibility criteria</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Scan/analysis screen (shown after upload) -->
+      <div id="scan-screen" style="height:calc(100vh - 50px);display:none;flex-direction:row">
+
+        <!-- Left: scan view -->
+        <div class="scan-left">
+
+        <!-- Left: scan view -->
+        <div class="scan-left">
+
+          <!-- Photo scan view -->
+          <div style="flex:1;min-height:0;position:relative;border-radius:12px;overflow:hidden;background:#1a2e22;box-shadow:0 2px 16px rgba(0,0,0,.18)">
+
+            <!-- Tram stop scene SVG -->
+            <svg width="100%" height="100%" viewBox="0 0 760 460" preserveAspectRatio="xMidYMid slice" style="display:block">
+              <defs>
+                <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#b8d4e8"/>
+                  <stop offset="100%" stop-color="#d8eaf4"/>
+                </linearGradient>
+                <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#7a7a7a"/>
+                  <stop offset="100%" stop-color="#5a5a5a"/>
+                </linearGradient>
+                <filter id="blur2"><feGaussianBlur stdDeviation="2"/></filter>
+                <filter id="blur1"><feGaussianBlur stdDeviation="1"/></filter>
+                <!-- Scan line gradient -->
+                <linearGradient id="scanGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(13,122,95,0)"/>
+                  <stop offset="45%" stop-color="rgba(13,122,95,0.12)"/>
+                  <stop offset="50%" stop-color="rgba(93,224,160,0.9)"/>
+                  <stop offset="55%" stop-color="rgba(13,122,95,0.12)"/>
+                  <stop offset="100%" stop-color="rgba(13,122,95,0)"/>
+                </linearGradient>
+              </defs>
+
+              <!-- Sky -->
+              <rect width="760" height="260" fill="url(#sky)"/>
+
+              <!-- Background buildings -->
+              <rect x="0" y="80" width="120" height="180" fill="#c8d8e0" opacity=".6"/>
+              <rect x="10" y="90" width="14" height="12" fill="#a0b8c8" opacity=".5"/>
+              <rect x="30" y="90" width="14" height="12" fill="#a0b8c8" opacity=".5"/>
+              <rect x="50" y="90" width="14" height="12" fill="#a0b8c8" opacity=".5"/>
+              <rect x="10" y="110" width="14" height="12" fill="#a0b8c8" opacity=".5"/>
+              <rect x="30" y="110" width="14" height="12" fill="#a0b8c8" opacity=".5"/>
+              <rect x="50" y="110" width="14" height="12" fill="#9ad0a0" opacity=".4"/>
+              <rect x="10" y="130" width="14" height="12" fill="#a0b8c8" opacity=".5"/>
+              <rect x="30" y="130" width="14" height="12" fill="#a0b8c8" opacity=".5"/>
+              <rect x="50" y="130" width="14" height="12" fill="#a0b8c8" opacity=".5"/>
+
+              <rect x="620" y="60" width="140" height="200" fill="#c0ccd4" opacity=".55"/>
+              <rect x="630" y="72" width="16" height="14" fill="#90a8bc" opacity=".6"/>
+              <rect x="654" y="72" width="16" height="14" fill="#90a8bc" opacity=".6"/>
+              <rect x="678" y="72" width="16" height="14" fill="#9ad0a0" opacity=".5"/>
+              <rect x="630" y="95" width="16" height="14" fill="#90a8bc" opacity=".6"/>
+              <rect x="654" y="95" width="16" height="14" fill="#9ad0a0" opacity=".4"/>
+              <rect x="678" y="95" width="16" height="14" fill="#90a8bc" opacity=".6"/>
+
+              <!-- Mid-ground building -->
+              <rect x="160" y="50" width="240" height="210" fill="#d4dce4"/>
+              <!-- Windows -->
+              <rect x="175" y="68" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="203" y="68" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="231" y="68" width="20" height="16" fill="#c8e8d0" opacity=".6"/>
+              <rect x="259" y="68" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="287" y="68" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="315" y="68" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="175" y="94" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="203" y="94" width="20" height="16" fill="#c8e8d0" opacity=".6"/>
+              <rect x="231" y="94" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="259" y="94" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="287" y="94" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="315" y="94" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="175" y="120" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="203" y="120" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="231" y="120" width="20" height="16" fill="#c8e8d0" opacity=".6"/>
+              <rect x="259" y="120" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="287" y="120" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+              <rect x="315" y="120" width="20" height="16" fill="#a8c0d4" opacity=".7"/>
+
+              <!-- Tram overhead wires -->
+              <line x1="0" y1="90" x2="760" y2="88" stroke="#555" stroke-width="1" opacity=".5"/>
+              <line x1="0" y1="95" x2="760" y2="93" stroke="#444" stroke-width=".5" opacity=".4"/>
+              <!-- Poles -->
+              <line x1="200" y1="88" x2="200" y2="260" stroke="#888" stroke-width="4"/>
+              <line x1="560" y1="88" x2="560" y2="260" stroke="#888" stroke-width="4"/>
+              <rect x="196" y="85" width="8" height="6" rx="1" fill="#777"/>
+              <rect x="556" y="85" width="8" height="6" rx="1" fill="#777"/>
+
+              <!-- Tram tracks -->
+              <rect x="0" y="258" width="760" height="202" fill="url(#road)"/>
+              <!-- Track rails -->
+              <rect x="260" y="258" width="6" height="202" fill="#8a8a8a"/>
+              <rect x="420" y="258" width="6" height="202" fill="#8a8a8a"/>
+              <!-- Track sleepers -->
+              <rect x="255" y="268" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="285" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="302" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="319" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="336" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="353" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="370" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="390" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="410" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="430" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+              <rect x="255" y="448" width="178" height="5" rx="1" fill="#666" opacity=".7"/>
+
+              <!-- Platform / stop area -->
+              <rect x="0" y="258" width="260" height="202" fill="#b8b0a8"/>
+              <!-- Platform edge yellow strip -->
+              <rect x="0" y="258" width="260" height="8" fill="#f0c030"/>
+
+              <!-- Tactile ground surface (yellow dots/strips) -->
+              <rect x="60" y="266" width="140" height="12" rx="2" fill="#d4a820" opacity=".9"/>
+              <rect x="66" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <rect x="80" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <rect x="94" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <rect x="108" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <rect x="122" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <rect x="136" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <rect x="150" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <rect x="164" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <rect x="178" y="268" width="8" height="8" rx="1" fill="#c89810" opacity=".8"/>
+              <!-- Direction strips -->
+              <rect x="100" y="280" width="6" height="60" rx="2" fill="#c89810" opacity=".6"/>
+              <rect x="116" y="280" width="6" height="60" rx="2" fill="#c89810" opacity=".6"/>
+              <rect x="132" y="280" width="6" height="60" rx="2" fill="#c89810" opacity=".6"/>
+              <rect x="148" y="280" width="6" height="60" rx="2" fill="#c89810" opacity=".6"/>
+
+              <!-- Tram stop shelter -->
+              <rect x="30" y="170" width="180" height="90" rx="2" fill="#e8e0d8" opacity=".95"/>
+              <rect x="30" y="170" width="180" height="8" fill="#c8c0b8"/>
+              <!-- Shelter glass panels -->
+              <rect x="34" y="180" width="50" height="76" fill="#b8d4e8" opacity=".4"/>
+              <rect x="88" y="180" width="50" height="76" fill="#b8d4e8" opacity=".4"/>
+              <rect x="142" y="180" width="64" height="76" fill="#b8d4e8" opacity=".4"/>
+              <!-- Shelter frame lines -->
+              <line x1="86" y1="170" x2="86" y2="260" stroke="#a8a098" stroke-width="2"/>
+              <line x1="140" y1="170" x2="140" y2="260" stroke="#a8a098" stroke-width="2"/>
+
+              <!-- Stop sign pole -->
+              <rect x="196" y="130" width="6" height="130" fill="#c0b8b0"/>
+              <!-- Stop sign -->
+              <rect x="172" y="128" width="54" height="36" rx="4" fill="#2a5ca8"/>
+              <text x="199" y="142" text-anchor="middle" fill="white" font-size="9" font-family="DM Sans,sans-serif" font-weight="600">STOP 1</text>
+              <text x="199" y="155" text-anchor="middle" fill="#a8d0f0" font-size="8" font-family="DM Sans,sans-serif">70  75  86</text>
+
+              <!-- Bench -->
+              <rect x="50" y="236" width="80" height="8" rx="2" fill="#a09080"/>
+              <rect x="55" y="244" width="6" height="14" rx="1" fill="#8a7868"/>
+              <rect x="118" y="244" width="6" height="14" rx="1" fill="#8a7868"/>
+
+              <!-- Kerb ramp -->
+              <path d="M0 258 L0 460 L40 460 L40 278 Z" fill="#c8c0b8"/>
+              <path d="M0 258 L40 278 L40 258 Z" fill="#b8b0a8"/>
+
+              <!-- Road markings -->
+              <rect x="320" y="310" width="40" height="6" rx="1" fill="white" opacity=".3"/>
+              <rect x="320" y="330" width="40" height="6" rx="1" fill="white" opacity=".3"/>
+              <rect x="320" y="350" width="40" height="6" rx="1" fill="white" opacity=".3"/>
+
+              <!-- Tram (partial, coming from right) -->
+              <rect x="470" y="200" width="290" height="120" rx="6" fill="#1a6080"/>
+              <rect x="470" y="200" width="290" height="14" rx="6" fill="#145070"/>
+              <!-- Tram windows -->
+              <rect x="490" y="218" width="50" height="34" rx="3" fill="#a0c8d8" opacity=".8"/>
+              <rect x="550" y="218" width="50" height="34" rx="3" fill="#a0c8d8" opacity=".8"/>
+              <rect x="610" y="218" width="50" height="34" rx="3" fill="#a0c8d8" opacity=".7"/>
+              <rect x="670" y="218" width="50" height="34" rx="3" fill="#a0c8d8" opacity=".6"/>
+              <!-- Tram door -->
+              <rect x="480" y="258" width="40" height="62" rx="2" fill="#145070"/>
+              <line x1="500" y1="258" x2="500" y2="320" stroke="#0a3040" stroke-width="2"/>
+              <!-- Tram base -->
+              <rect x="470" y="318" width="290" height="10" fill="#0e4060"/>
+              <!-- Tram wheels/bogies -->
+              <ellipse cx="510" cy="335" rx="18" ry="8" fill="#333"/>
+              <ellipse cx="510" cy="335" rx="10" ry="4" fill="#555"/>
+              <ellipse cx="680" cy="335" rx="18" ry="8" fill="#333"/>
+              <ellipse cx="680" cy="335" rx="10" ry="4" fill="#555"/>
+              <!-- Tram number -->
+              <text x="605" y="215" text-anchor="middle" fill="#c8e8f4" font-size="11" font-family="DM Sans,sans-serif" font-weight="600">ROUTE 70 — FLINDERS ST</text>
+
+              <!-- People waiting (silhouettes) -->
+              <ellipse cx="80" cy="226" rx="9" ry="9" fill="#6a5a50"/>
+              <rect x="73" y="235" width="14" height="22" rx="3" fill="#7a6a60"/>
+              <rect x="73" y="257" width="6" height="14" rx="2" fill="#6a5a50"/>
+              <rect x="81" y="257" width="6" height="14" rx="2" fill="#6a5a50"/>
+
+              <ellipse cx="115" cy="228" rx="8" ry="8" fill="#4a3a30"/>
+              <rect x="108" y="236" width="14" height="20" rx="3" fill="#5a4a40"/>
+              <rect x="108" y="256" width="5" height="12" rx="2" fill="#4a3a30"/>
+              <rect x="116" y="256" width="5" height="12" rx="2" fill="#4a3a30"/>
+
+              <!-- Perspective lines on platform -->
+              <line x1="0" y1="460" x2="260" y2="258" stroke="rgba(0,0,0,.05)" stroke-width="1"/>
+
+              <!-- Subtle vignette -->
+              <rect width="760" height="460" fill="url(#vignette)" opacity=".3"/>
+              <defs>
+                <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+                  <stop offset="60%" stop-color="transparent"/>
+                  <stop offset="100%" stop-color="rgba(0,0,0,.6)"/>
+                </radialGradient>
+              </defs>
+
+              <!-- ── AI DETECTION OVERLAYS ── -->
+
+              <!-- 1. Tactile surface detection box (GREEN - pass) -->
+              <rect x="58" y="262" width="148" height="28" rx="3" fill="none" stroke="#0D7A5F" stroke-width="2" stroke-dasharray="6 3"/>
+              <rect x="58" y="248" width="120" height="16" rx="3" fill="#0D7A5F"/>
+              <text x="64" y="259" fill="white" font-size="9" font-family="DM Sans,sans-serif" font-weight="500">Tactile surface  ✓ 97%</text>
+              <!-- Corner marks -->
+              <line x1="58" y1="268" x2="58" y2="262" stroke="#0D7A5F" stroke-width="2.5"/>
+              <line x1="58" y1="262" x2="66" y2="262" stroke="#0D7A5F" stroke-width="2.5"/>
+              <line x1="198" y1="262" x2="206" y2="262" stroke="#0D7A5F" stroke-width="2.5"/>
+              <line x1="206" y1="262" x2="206" y2="270" stroke="#0D7A5F" stroke-width="2.5"/>
+              <line x1="58" y1="284" x2="58" y2="290" stroke="#0D7A5F" stroke-width="2.5"/>
+              <line x1="58" y1="290" x2="66" y2="290" stroke="#0D7A5F" stroke-width="2.5"/>
+              <line x1="198" y1="290" x2="206" y2="290" stroke="#0D7A5F" stroke-width="2.5"/>
+              <line x1="206" y1="284" x2="206" y2="290" stroke="#0D7A5F" stroke-width="2.5"/>
+
+              <!-- 2. Kerb ramp detection (GREEN - pass) -->
+              <rect x="2" y="254" width="56" height="100" rx="3" fill="none" stroke="#0D7A5F" stroke-width="2" stroke-dasharray="6 3"/>
+              <rect x="2" y="240" width="100" height="16" rx="3" fill="#0D7A5F"/>
+              <text x="8" y="251" fill="white" font-size="9" font-family="DM Sans,sans-serif" font-weight="500">Kerb ramp  ✓ 94%</text>
+
+              <!-- 3. Stop sign detection (ORANGE - warning) -->
+              <rect x="168" y="124" width="62" height="44" rx="3" fill="none" stroke="#E8A020" stroke-width="2" stroke-dasharray="6 3"/>
+              <rect x="168" y="110" width="118" height="16" rx="3" fill="#E8A020"/>
+              <text x="174" y="121" fill="white" font-size="9" font-family="DM Sans,sans-serif" font-weight="500">Signage (partial)  ⚠ 71%</text>
+              <!-- Obstruction indicator -->
+              <rect x="205" y="130" width="26" height="36" rx="2" fill="rgba(232,160,32,.25)" stroke="#E8A020" stroke-width="1" stroke-dasharray="3 2"/>
+              <text x="218" y="152" text-anchor="middle" fill="#E8A020" font-size="8" font-family="DM Sans,sans-serif">obstr.</text>
+
+              <!-- 4. Platform gap (RED - fail) -->
+              <rect x="254" y="252" width="180" height="14" rx="3" fill="none" stroke="#D94040" stroke-width="2.5" stroke-dasharray="6 3"/>
+              <rect x="254" y="236" width="140" height="17" rx="3" fill="#D94040"/>
+              <text x="260" y="248" fill="white" font-size="9" font-family="DM Sans,sans-serif" font-weight="500">Platform gap  ✗ 82mm  !</text>
+              <!-- Gap measurement line -->
+              <line x1="260" y1="259" x2="430" y2="259" stroke="#D94040" stroke-width="1" stroke-dasharray="3 2" opacity=".6"/>
+              <line x1="260" y1="254" x2="260" y2="264" stroke="#D94040" stroke-width="1.5"/>
+              <line x1="430" y1="254" x2="430" y2="264" stroke="#D94040" stroke-width="1.5"/>
+
+              <!-- 5. People / obstructions -->
+              <rect x="65" y="215" width="70" height="44" rx="3" fill="none" stroke="#7a9aff" stroke-width="1.5" stroke-dasharray="4 3" opacity=".7"/>
+              <rect x="65" y="203" width="60" height="13" rx="3" fill="rgba(100,130,255,.75)"/>
+              <text x="70" y="213" fill="white" font-size="8" font-family="DM Sans,sans-serif">Person  89%</text>
+
+              <!-- Scan line animation -->
+              <rect id="scanline" x="0" y="0" width="760" height="460" fill="url(#scanGrad)" opacity=".8">
+                <animate attributeName="y" from="-460" to="460" dur="2.4s" repeatCount="indefinite"/>
+              </rect>
+
+              <!-- Corner viewfinder brackets -->
+              <line x1="0" y1="30" x2="0" y2="0" stroke="rgba(93,224,160,.7)" stroke-width="3"/>
+              <line x1="0" y1="0" x2="36" y2="0" stroke="rgba(93,224,160,.7)" stroke-width="3"/>
+              <line x1="760" y1="0" x2="724" y2="0" stroke="rgba(93,224,160,.7)" stroke-width="3"/>
+              <line x1="760" y1="0" x2="760" y2="30" stroke="rgba(93,224,160,.7)" stroke-width="3"/>
+              <line x1="0" y1="430" x2="0" y2="460" stroke="rgba(93,224,160,.7)" stroke-width="3"/>
+              <line x1="0" y1="460" x2="36" y2="460" stroke="rgba(93,224,160,.7)" stroke-width="3"/>
+              <line x1="760" y1="460" x2="724" y2="460" stroke="rgba(93,224,160,.7)" stroke-width="3"/>
+              <line x1="760" y1="430" x2="760" y2="460" stroke="rgba(93,224,160,.7)" stroke-width="3"/>
+            </svg>
+
+            <!-- HUD overlays on top of SVG -->
+            <!-- Top left: scanning status -->
+            <div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px">
+              <div style="width:8px;height:8px;border-radius:50%;background:#5de0a0;box-shadow:0 0 6px #5de0a0;animation:pulse 1.2s ease-in-out infinite"></div>
+              <span style="font-size:11px;color:#5de0a0;font-weight:500;letter-spacing:.05em">Analysing photo...</span>
+            </div>
+
+            <!-- Top right: photo info -->
+            <div style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,.55);border:.5px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 12px;backdrop-filter:blur(4px)">
+              <div style="font-size:10px;color:#9ac8b4;margin-bottom:2px">stop-front.jpg</div>
+              <div style="font-size:11px;color:#fff;font-weight:500">Flinders St / Elizabeth St</div>
+            </div>
+
+            <!-- Bottom: detection summary bar -->
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:18px 16px 12px;display:flex;align-items:flex-end;justify-content:space-between">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <span style="background:rgba(13,122,95,.85);color:#fff;font-size:10px;font-weight:500;padding:3px 10px;border-radius:6px;border:.5px solid rgba(93,224,160,.4)">✓ Tactile surface</span>
+                <span style="background:rgba(13,122,95,.85);color:#fff;font-size:10px;font-weight:500;padding:3px 10px;border-radius:6px;border:.5px solid rgba(93,224,160,.4)">✓ Kerb ramp</span>
+                <span style="background:rgba(232,160,32,.85);color:#fff;font-size:10px;font-weight:500;padding:3px 10px;border-radius:6px;border:.5px solid rgba(232,200,32,.4)">⚠ Signage</span>
+                <span style="background:rgba(217,64,64,.85);color:#fff;font-size:10px;font-weight:500;padding:3px 10px;border-radius:6px;border:.5px solid rgba(255,100,100,.4)">✗ Platform gap 82mm</span>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+                <label class="btn btn-outline" style="cursor:pointer;font-size:11px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff;padding:6px 12px">
+                  Upload another
+                  <input type="file" multiple accept="image/*" style="display:none">
+                </label>
+              </div>
+            </div>
+
+            <!-- Thumbnail strip top-right (other uploaded photos) -->
+            <div style="position:absolute;top:44px;right:14px;display:flex;flex-direction:column;gap:6px;margin-top:6px">
+              <div style="width:62px;height:48px;border-radius:7px;background:#5baee0;border:2px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;opacity:.8">
+                <span style="font-size:8px;color:#fff;text-align:center;padding:0 3px">tactile.jpg</span>
+              </div>
+              <div style="width:62px;height:48px;border-radius:7px;border:1.5px dashed rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.06)">
+                <span style="font-size:18px;color:rgba(255,255,255,.4)">+</span>
+              </div>
+            </div>
+
+            <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
+          </div>
+
+          <!-- Stop info -->
+          <div class="scan-info">
+            <div>
+              <div class="si-name">Flinders St / Elizabeth St</div>
+              <div class="si-sub">Stop 1 · Routes 70, 75 · CBD, Melbourne</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <span class="chip chip-blue">Route 70</span>
+              <span class="chip chip-blue">Route 75</span>
+              <span class="chip chip-muted">Selected stop</span>
+            </div>
+          </div>
+
+          <!-- Analysis progress -->
+          <div class="analysis-box">
+            <div class="ab-head">
+              <span class="ab-title">AI analysis in progress</span>
+              <span class="chip chip-green">2 / 5 checks</span>
+            </div>
+            <div class="check-list">
+              <div class="check-item">
+                <div class="check-box done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div><div class="check-txt">Tactile ground surface</div><div class="check-status" style="color:var(--green);font-size:10px;margin-top:2px">Compliant — detected</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div><div class="check-txt">Kerb ramp present</div><div class="check-status" style="color:var(--green);font-size:10px;margin-top:2px">Present — within gradient</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box active"></div>
+                <div><div class="check-txt pend">Accessible signage</div><div class="check-guide">Scanning...</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Platform gap clearance</div><div class="check-guide">Waiting</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Audio announcement system</div><div class="check-guide">Waiting</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: guide -->
+        <div class="scan-right">
+          <div style="padding:14px 18px;border-bottom:.5px solid var(--border)">
+            <div style="font-size:13px;font-weight:500">Photo guide</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">What to include in your photos</div>
+          </div>
+          <div style="padding:12px 16px;flex:1">
+            <div style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">What to photograph</div>
+            <div class="check-list">
+              <div class="check-item">
+                <div class="check-box done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div><div class="check-txt">Tactile ground surface</div><div class="check-guide">Photo of the boarding zone floor</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Kerb ramp</div><div class="check-guide">Full ramp including gradient</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Accessible signage</div><div class="check-guide">Stop sign and route info boards</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Platform edge / gap</div><div class="check-guide">Close-up of tram boarding gap</div></div>
+              </div>
+              <div class="check-item">
+                <div class="check-box pend"></div>
+                <div><div class="check-txt pend">Path of travel</div><div class="check-guide">Approach from footpath to stop</div></div>
+              </div>
+            </div>
+            <div style="background:#eef6f2;border-radius:9px;padding:12px 14px;margin-top:14px">
+              <div style="font-size:11px;color:#3a6a52;line-height:1.5"><strong>Tip:</strong> Take photos in good lighting. Include as much of the stop as possible — our AI does the rest.</div>
+            </div>
+          </div>
+          <div style="padding:14px 16px;border-top:.5px solid var(--border)">
+            <button class="btn btn-primary" style="width:100%;font-size:13px;padding:12px">Analyse photos</button>
+            <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:8px">AI checks all 5 accessibility criteria</div>
+          </div>
+        </div>
+
+
+        </div>
+
+      </div>
+
+      <script>
+        function startScan() {
+          document.getElementById('upload-screen').style.display = 'none';
+          document.getElementById('scan-screen').style.display = 'flex';
+        }
+        function addFiles(files) {
+          // just visual feedback — in real app would handle files
+          const counter = document.getElementById('counter');
+          counter.textContent = Math.min(2 + files.length, 6) + ' / 6 photos';
+        }
+        function handleDrop(e) {
+          e.preventDefault();
+          document.getElementById('dropzone').classList.remove('drag');
+          addFiles(e.dataTransfer.files);
+        }
+        function removeThumb(el) {
+          el.parentElement.remove();
+        }
+      </script>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

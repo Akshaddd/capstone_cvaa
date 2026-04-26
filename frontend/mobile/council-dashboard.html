@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MyAccess — Council Mobile</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="C">
+
+<!-- COUNCIL LOGIN -->
+<div class="screen-group">
+  <div class="screen-label">08 · Council — Public Reports</div>
+  <div class="phone dark C">
+    <div class="notch"></div>
+    <div class="phone-screen" style="background:var(--bg)">
+
+      <div class="sb" style="background:var(--nav)">
+        <span class="sb-time" style="color:var(--acc2)">9:41</span>
+        <div class="sb-right">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="#c87de0"><rect x="0" y="3" width="3" height="8" rx="1"/><rect x="4.5" y="2" width="3" height="9" rx="1"/><rect x="9" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="#c87de0" stroke-opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#6B2D8B"/></svg>
+        </div>
+      </div>
+
+      <!-- Header -->
+      <div style="background:var(--sf);padding:12px 16px 0;border-bottom:.5px solid var(--bd);flex-shrink:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div style="font-size:15px;font-weight:500;color:var(--t1)">Public Reports</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:1px">City of Melbourne</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:30px;height:30px;background:var(--sf2);border:.5px solid var(--bd2);border-radius:7px;display:flex;align-items:center;justify-content:center;position:relative">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+              <div style="position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:#D94040;border:1px solid var(--sf)"></div>
+            </div>
+            <div class="av" style="background:#6B2D8B">SR</div>
+          </div>
+        </div>
+        <div class="ptv-tabs" style="margin:0 -16px;padding:0 16px">
+          <div class="ptv-tab on" style="color:var(--acc2);border-bottom-color:var(--acc)">Reports</div>
+          <div class="ptv-tab" style="color:var(--t3)">Area index</div>
+          <div class="ptv-tab" style="color:var(--t3)">Community</div>
+          <div class="ptv-tab" style="color:var(--t3)">Insights</div>
+        </div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="c-stats">
+        <div class="c-stat"><div class="c-stat-val" style="color:#6B2D8B">342</div><div class="c-stat-lbl">Public reports</div></div>
+        <div class="c-stat"><div class="c-stat-val" style="color:#0D7A5F">78%</div><div class="c-stat-lbl">Resolved</div></div>
+        <div class="c-stat"><div class="c-stat-val" style="color:#8a6800">41</div><div class="c-stat-lbl">Under review</div></div>
+        <div class="c-stat"><div class="c-stat-val" style="color:#a02020">12</div><div class="c-stat-lbl">Escalated</div></div>
+      </div>
+
+      <!-- Reports list -->
+      <div style="flex:1;overflow-y:auto">
+        <div class="pub-list">
+          <div class="pub-sec">Active reports</div>
+
+          <div class="pub-card-m">
+            <div class="pub-top-m">
+              <div class="pub-title-m">Broken kerb ramp</div>
+              <span class="chip chip-g">Active</span>
+            </div>
+            <div class="pub-meta-m">Chapel St / Commercial Rd · Stonnington · 1 day ago</div>
+          </div>
+
+          <div class="pub-card-m">
+            <div class="pub-top-m">
+              <div class="pub-title-m">Missing tactile strip</div>
+              <span class="chip chip-y">Review</span>
+            </div>
+            <div class="pub-meta-m">Bourke St Mall / Swanston · CBD · 3 days ago</div>
+          </div>
+
+          <div class="pub-card-m">
+            <div class="pub-top-m">
+              <div class="pub-title-m">No accessible path to stop</div>
+              <span class="chip chip-y">Review</span>
+            </div>
+            <div class="pub-meta-m">Smith St / Johnston St · Fitzroy · 4 days ago</div>
+          </div>
+
+          <div class="pub-card-m" style="border-color:rgba(160,32,32,.4)">
+            <div class="pub-top-m">
+              <div class="pub-title-m">Broken lift — Flinders St Station</div>
+              <span class="chip chip-r">Escalated</span>
+            </div>
+            <div class="pub-meta-m">CBD · 5 days ago · Council action required</div>
+          </div>
+
+          <div class="pub-card-m" style="border-color:var(--bd2)">
+            <div class="pub-top-m">
+              <div class="pub-title-m" style="color:#6B2D8B">New petition: Brunswick St stop</div>
+              <span class="chip chip-p">28/50</span>
+            </div>
+            <div class="pub-meta-m">Fitzroy · 6 days ago · Open for community support</div>
+          </div>
+
+          <div class="pub-sec" style="margin-top:14px">Area accessibility index</div>
+          <div style="background:var(--sf);border:.5px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+            <div class="ins-list" style="padding:0">
+              <div class="ins-row"><span class="ins-name-m">CBD</span><div class="ins-track"><div class="ins-fill" style="width:88%;background:#0D7A5F"></div></div><span class="ins-val-m">88%</span></div>
+              <div class="ins-row"><span class="ins-name-m">Carlton</span><div class="ins-track"><div class="ins-fill" style="width:82%;background:#0D7A5F"></div></div><span class="ins-val-m">82%</span></div>
+              <div class="ins-row"><span class="ins-name-m">Fitzroy</span><div class="ins-track"><div class="ins-fill" style="width:71%;background:#E8CF27"></div></div><span class="ins-val-m">71%</span></div>
+              <div class="ins-row"><span class="ins-name-m">Richmond</span><div class="ins-track"><div class="ins-fill" style="width:68%;background:#E8CF27"></div></div><span class="ins-val-m">68%</span></div>
+              <div class="ins-row"><span class="ins-name-m">Footscray</span><div class="ins-track"><div class="ins-fill" style="width:48%;background:#D94040"></div></div><span class="ins-val-m">48%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav (dark council) -->
+      <div class="nav" style="background:var(--nav);border-top:.5px solid var(--bd)">
+        <div class="ni"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a2048" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="nl" style="color:#3a2048">Home</span></div>
+        <div class="ni"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--acc2)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg><span class="nl on" style="color:var(--acc2)">Reports</span></div>
+        <div class="ni"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a2048" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="nl" style="color:#3a2048">Insights</span></div>
+        <div class="ni"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a2048" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="nl" style="color:#3a2048">Profile</span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

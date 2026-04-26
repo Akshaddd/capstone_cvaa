@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MyAccess — PTV Mobile</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="P">
+
+<!-- PTV LOGIN -->
+<div class="screen-group">
+  <div class="screen-label">06 · PTV Staff — Dashboard</div>
+  <div class="phone dark P">
+    <div class="notch"></div>
+    <div class="phone-screen" style="background:var(--bg)">
+
+      <div class="sb" style="background:var(--bg)">
+        <span class="sb-time" style="color:#7ecfac">9:41</span>
+        <div class="sb-right">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="#7ecfac"><rect x="0" y="3" width="3" height="8" rx="1"/><rect x="4.5" y="2" width="3" height="9" rx="1"/><rect x="9" y="0" width="3" height="11" rx="1"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="#7ecfac" stroke-opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#0D7A5F"/></svg>
+        </div>
+      </div>
+
+      <!-- Header -->
+      <div class="ptv-hdr-m">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="ptv-name-m">Network Dashboard</div>
+            <div class="ptv-sub-m">Melbourne tram · live overview</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:30px;height:30px;background:#e8f5ef;border:.5px solid #c8e0d4;border-radius:7px;display:flex;align-items:center;justify-content:center;position:relative">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4a8c6e" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+              <div style="position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:#D94040;border:1px solid #fff"></div>
+            </div>
+            <div class="av" style="background:#0D7A5F">PK</div>
+          </div>
+        </div>
+        <div class="ptv-tabs">
+          <div class="ptv-tab on">Overview</div>
+          <div class="ptv-tab">Maintenance</div>
+          <div class="ptv-tab">Reports</div>
+          <div class="ptv-tab">Map</div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-m">
+        <div class="sm-box"><div class="sm-val" style="color:#1a5a90">148</div><div class="sm-lbl">Total stops</div></div>
+        <div class="sm-box"><div class="sm-val" style="color:#0D7A5F">91%</div><div class="sm-lbl">Compliance</div></div>
+        <div class="sm-box"><div class="sm-val" style="color:#8a6800">23</div><div class="sm-lbl">Pending</div></div>
+        <div class="sm-box"><div class="sm-val" style="color:#a02020">7</div><div class="sm-lbl">Critical</div></div>
+      </div>
+
+      <!-- Reports list -->
+      <div style="flex:1;overflow-y:auto">
+        <div class="rep-list">
+          <div class="rep-sec">Critical & active</div>
+
+          <div class="rep-row-m">
+            <div class="rep-dot-m" style="background:#a02020"></div>
+            <div class="rep-main-m">
+              <div class="rep-title-m">Stop #14 — Platform gap 82mm</div>
+              <div class="rep-meta-m">Swanston St / Bourke St · 2h ago</div>
+            </div>
+            <span class="chip chip-r">Critical</span>
+          </div>
+
+          <div class="rep-row-m">
+            <div class="rep-dot-m" style="background:#8a6800"></div>
+            <div class="rep-main-m">
+              <div class="rep-title-m">Stop #27 — Tactile surface wear</div>
+              <div class="rep-meta-m">Collins St / Spencer St · Yesterday</div>
+            </div>
+            <span class="chip chip-y">Active</span>
+          </div>
+
+          <div class="rep-row-m">
+            <div class="rep-dot-m" style="background:#1a5a90"></div>
+            <div class="rep-main-m">
+              <div class="rep-title-m">Stop #3 — Signage obstruction</div>
+              <div class="rep-meta-m">Flinders St / Elizabeth St · 3d ago</div>
+            </div>
+            <span class="chip chip-b">Scheduled</span>
+          </div>
+
+          <div class="rep-row-m">
+            <div class="rep-dot-m" style="background:#0D7A5F"></div>
+            <div class="rep-main-m">
+              <div class="rep-title-m">Stop #89 — Kerb ramp damage</div>
+              <div class="rep-meta-m">Chapel St / Toorak Rd · 4d ago</div>
+            </div>
+            <span class="chip chip-g">Resolved</span>
+          </div>
+
+          <div class="rep-sec" style="margin-top:14px">Compliance by route</div>
+          <div style="background:var(--sf);border:.5px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--t2);min-width:70px">Route 70</span><div style="flex:1;background:#eef6f2;border-radius:3px;height:6px;overflow:hidden"><div style="width:96%;height:6px;border-radius:3px;background:#0D7A5F"></div></div><span style="font-size:11px;font-weight:500;min-width:32px;text-align:right">96%</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--t2);min-width:70px">Route 86</span><div style="flex:1;background:#eef6f2;border-radius:3px;height:6px;overflow:hidden"><div style="width:88%;height:6px;border-radius:3px;background:#0D7A5F"></div></div><span style="font-size:11px;font-weight:500;min-width:32px;text-align:right">88%</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--t2);min-width:70px">Route 48</span><div style="flex:1;background:#eef6f2;border-radius:3px;height:6px;overflow:hidden"><div style="width:79%;height:6px;border-radius:3px;background:#E8CF27"></div></div><span style="font-size:11px;font-weight:500;min-width:32px;text-align:right">79%</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--t2);min-width:70px">Route 12</span><div style="flex:1;background:#eef6f2;border-radius:3px;height:6px;overflow:hidden"><div style="width:58%;height:6px;border-radius:3px;background:#D94040"></div></div><span style="font-size:11px;font-weight:500;min-width:32px;text-align:right">58%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav (dark PTV style) -->
+      <div class="nav" style="background:#0a1a0f;border-top:.5px solid #1a3a22">
+        <div class="ni"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5de0a0" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="nl on" style="color:#5de0a0">Home</span></div>
+        <div class="ni"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a6a4a" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg><span class="nl" style="color:#3a6a4a">Map</span></div>
+        <div class="ni"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a6a4a" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="nl" style="color:#3a6a4a">Reports</span></div>
+        <div class="ni"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a6a4a" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="nl" style="color:#3a6a4a">Profile</span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
