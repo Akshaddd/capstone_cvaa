@@ -31,10 +31,10 @@ async def generate_report_from_image(file: UploadFile = File(...)):
 
     # Run YOLO inference
     try:
-        inference_result = await inference.scan_image(file=file)
+        inference_result = await inference.scan_combined(file=file)
         boxed_image_path = inference_result.get("boxed_image_path")
         detections = inference_result.get("detections", [])
-        print("DETECTIONS FROM YOLO:", detections)
+        print("DETECTIONS FROM COMBINED YOLO:", detections)
     except Exception as e:
         print("Inference failed, using fallback:", e)
         boxed_image_path = None
