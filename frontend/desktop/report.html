@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>MyAccess — Scan Report</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon"><svg width="16" height="16" viewBox="0 0 34 34" fill="none"><rect x="5" y="9" width="20" height="14" rx="3" fill="white"/><rect x="8" y="12" width="5" height="4" rx="1" fill="#0D7A5F"/><rect x="15" y="12" width="5" height="4" rx="1" fill="#0D7A5F"/><circle cx="10" cy="24" r="2" fill="white"/><circle cx="20" cy="24" r="2" fill="white"/><circle cx="27" cy="9" r="5" fill="white"/><circle cx="27" cy="9" r="2.5" fill="#0D7A5F"/></svg></div>
+      <div><div class="sb-logo-name">MyAccess</div><div class="sb-logo-sub">Melbourne network</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Navigate</div>
+      <div class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Accessibility map</div>
+      <div class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01"/></svg>Scan stop</div>
+      <div class="sb-section">My data</div>
+      <div class="sb-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>My reports</div>
+      <div class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>History</div>
+      <div class="sb-section">Account</div>
+      <div class="sb-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Settings</div>
+    </nav>
+    <div class="sb-user">
+      <div class="sb-avatar">JD</div>
+      <div><div class="sb-user-name">J. Doe</div><div class="sb-user-role">Public user</div></div>
+      <div class="sb-online"></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="#">Reports</a><span class="sep">/</span><span class="cur">RPT-2026-0341</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-outline">Share</button>
+        <button class="btn btn-outline">Download PDF</button>
+        <button class="btn btn-primary">Submit to PTV</button>
+      </div>
+    </div>
+
+    <div class="content-area scroll-y">
+
+      <!-- Score hero -->
+      <div class="report-hero" style="margin:-24px -28px 24px;padding:18px 28px">
+        <div class="rh-top">
+          <!-- Score ring -->
+          <div class="score-ring-wrap">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#eef6f2" stroke-width="6"/>
+              <circle cx="36" cy="36" r="28" fill="none" stroke="#0D7A5F" stroke-width="6" stroke-dasharray="124 52" stroke-linecap="round" transform="rotate(-90 36 36)"/>
+            </svg>
+            <div class="score-num">72</div>
+          </div>
+          <div class="rh-info">
+            <div class="rh-name">Flinders St / Elizabeth St — Stop 1</div>
+            <div class="rh-addr">Routes 70, 75 · CBD · <span style="color:var(--green)">Melbourne</span></div>
+            <div class="rh-date">Scanned by J. Doe · Today at 9:38 AM · Report #RPT-2026-0341</div>
+          </div>
+          <div class="rh-stats">
+            <div class="rh-stat"><div class="rh-stat-num" style="color:#0D7A5F">4</div><div class="rh-stat-lbl">Passed</div></div>
+            <div class="rh-stat"><div class="rh-stat-num" style="color:#8a6800">2</div><div class="rh-stat-lbl">Warnings</div></div>
+            <div class="rh-stat"><div class="rh-stat-num" style="color:#a02020">1</div><div class="rh-stat-lbl">Failed</div></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" style="font-size:11px">Share</button>
+          <button class="btn btn-outline" style="font-size:11px">Download PDF</button>
+          <button class="btn btn-primary" style="font-size:11px">Submit to PTV</button>
+          <button class="btn btn-outline" style="font-size:11px;border-color:#d8c0f0;color:#6B2D8B">Submit to council</button>
+        </div>
+      </div>
+
+<!-- Main content grid -->
+      <div class="two-col">
+
+        <!-- Left: findings, photos, a11y summary -->
+        <div class="side-stack">
+
+          <!-- Findings table -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">Technical findings</span><span class="card-link">Export →</span></div>
+            <div class="card-body no-pad overflow-x-auto">
+              <table class="data-table">
+                <thead><tr><th>Check</th><th>Status</th><th>Standard</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>Tactile ground surface</td><td><span class="chip chip-green">Pass</span></td><td style="color:var(--text3)">AS 1428.4.1</td><td style="color:var(--text2)">Compliant indicators at boarding zone</td></tr>
+                  <tr><td>Kerb ramp gradient</td><td><span class="chip chip-green">Pass</span></td><td style="color:var(--text3)">AS 1428.2</td><td style="color:var(--text2)">Within 1:14 gradient — compliant</td></tr>
+                  <tr><td>Platform surface condition</td><td><span class="chip chip-green">Pass</span></td><td style="color:var(--text3)">DDA 2010</td><td style="color:var(--text2)">No cracks or hazards detected</td></tr>
+                  <tr><td>Path of travel width</td><td><span class="chip chip-green">Pass</span></td><td style="color:var(--text3)">AS 1428.1</td><td style="color:var(--text2)">1,200mm clearance confirmed</td></tr>
+                  <tr><td>Accessible signage visibility</td><td><span class="chip chip-yellow">Warning</span></td><td style="color:var(--text3)">AS 1428.2</td><td style="color:#8a6800">Sign partially obstructed — review needed</td></tr>
+                  <tr><td>Overhead clearance</td><td><span class="chip chip-yellow">Warning</span></td><td style="color:var(--text3)">AS 1428.1</td><td style="color:#8a6800">Low branch at eastern approach — 1.95m</td></tr>
+                  <tr><td>Platform gap clearance</td><td><span class="chip chip-red">Failed</span></td><td style="color:var(--text3)">AS 1428.4.1</td><td style="color:#a02020">Gap 82mm — exceeds 75mm threshold</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Photos -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">Photo evidence</span><span class="card-link">View all 3 →</span></div>
+            <div class="card-body" style="display:flex;gap:10px">
+              <div style="flex:1;height:90px;background:#0D7A5F;border-radius:8px;display:flex;align-items:center;justify-content:center"><span style="font-size:11px;color:#fff;font-weight:500">Tactile surface</span></div>
+              <div style="flex:1;height:90px;background:#eef6f2;border:.5px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center"><span style="font-size:11px;color:var(--text2)">Platform gap</span></div>
+              <div style="flex:1;height:90px;background:#fdf5d0;border:.5px solid #e8d080;border-radius:8px;display:flex;align-items:center;justify-content:center"><span style="font-size:11px;color:#8a6800">Signage view</span></div>
+            </div>
+          </div>
+
+          <!-- Accessibility summary -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">Accessibility summary</span>
+              <span class="chip chip-yellow">Partially accessible</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr)">
+              <div class="a11y-item fail" style="padding:14px 16px;border-right:.5px solid var(--border);border-bottom:.5px solid var(--border)">
+                <div class="a11y-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#a02020" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="4" r="2"/><path d="M9 10h4l2 5h3"/><path d="M9 10v5l3 3"/><circle cx="7" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg></div>
+                <div class="a11y-item-label">Wheelchair</div>
+                <div class="a11y-item-verdict">⚠ Not safe</div>
+                <div class="a11y-item-notes">82mm gap — ramp needed</div>
+              </div>
+              <div class="a11y-item warn" style="padding:14px 16px;border-right:.5px solid var(--border);border-bottom:.5px solid var(--border)">
+                <div class="a11y-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#8a6800" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="3" x2="21" y2="21"/></svg></div>
+                <div class="a11y-item-label">Vision</div>
+                <div class="a11y-item-verdict">⚠ With caution</div>
+                <div class="a11y-item-notes">Sign partially obstructed</div>
+              </div>
+              <div class="a11y-item ok" style="padding:14px 16px;border-bottom:.5px solid var(--border)">
+                <div class="a11y-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0a5c40" stroke-width="2" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M8 6l4-4 4 4"/><path d="M8 18l4 4 4-4"/></svg></div>
+                <div class="a11y-item-label">Mobility aids</div>
+                <div class="a11y-item-verdict">✓ Accessible</div>
+                <div class="a11y-item-notes">Compliant ramp, 1200mm path</div>
+              </div>
+              <div class="a11y-item ok" style="padding:14px 16px;border-right:.5px solid var(--border)">
+                <div class="a11y-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0a5c40" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+                <div class="a11y-item-label">Hearing</div>
+                <div class="a11y-item-verdict">✓ Visual info ok</div>
+                <div class="a11y-item-notes">Displays present</div>
+              </div>
+              <div class="a11y-item warn" style="padding:14px 16px;border-right:.5px solid var(--border)">
+                <div class="a11y-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#8a6800" stroke-width="2" stroke-linecap="round"><path d="M3 6h3l3 9h8l2-6H6"/><circle cx="9" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg></div>
+                <div class="a11y-item-label">Pram / stroller</div>
+                <div class="a11y-item-verdict">⚠ Assist needed</div>
+                <div class="a11y-item-notes">Use accessibility button</div>
+              </div>
+              <div class="a11y-item ok" style="padding:14px 16px">
+                <div class="a11y-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0a5c40" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0113 0"/><line x1="17" y1="13" x2="19" y2="17"/></svg></div>
+                <div class="a11y-item-label">Elderly</div>
+                <div class="a11y-item-verdict">✓ Generally ok</div>
+                <div class="a11y-item-notes">Smooth path, seating available</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: score, actions, submit -->
+        <div class="side-stack">
+
+          <!-- Score -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">Accessibility score</span></div>
+            <div class="card-body">
+              <div class="prog-item"><div class="prog-top"><span>Overall score</span><span class="prog-pct">72%</span></div><div class="prog-track"><div class="prog-fill" style="width:72%"></div></div></div>
+              <div class="prog-item"><div class="prog-top"><span>Physical access</span><span class="prog-pct">85%</span></div><div class="prog-track"><div class="prog-fill" style="width:85%"></div></div></div>
+              <div class="prog-item"><div class="prog-top"><span style="color:#8a6800">Signage & wayfinding</span><span class="prog-pct" style="color:#8a6800">60%</span></div><div class="prog-track"><div class="prog-fill warn" style="width:60%"></div></div></div>
+              <div class="prog-item"><div class="prog-top"><span style="color:#a02020">Gap clearance</span><span class="prog-pct" style="color:#a02020">0%</span></div><div class="prog-track"><div class="prog-fill err" style="width:0%"></div></div></div>
+              <div class="prog-item"><div class="prog-top"><span>Audio systems</span><span style="font-size:12px;color:var(--text3)">N/A</span></div><div class="prog-track"><div class="prog-fill" style="width:0%;background:#ddeee6"></div></div></div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">Recommended actions</span></div>
+            <div class="card-body" style="padding:12px 16px">
+              <div class="activity">
+                <div class="act-item"><div class="act-dot-col"><div class="act-dot" style="background:#a02020"></div><div class="act-line"></div></div><div class="act-body"><div class="act-title">Urgent: Platform gap repair</div><div class="act-meta">Gap exceeds 75mm · Submit to PTV maintenance · Ref. AS 1428.4.1</div></div></div>
+                <div class="act-item"><div class="act-dot-col"><div class="act-dot" style="background:#8a6800"></div><div class="act-line"></div></div><div class="act-body"><div class="act-title">Review signage obstruction</div><div class="act-meta">Partially blocked sign at eastern approach · Trim vegetation</div></div></div>
+                <div class="act-item"><div class="act-dot-col"><div class="act-dot" style="background:#8a6800"></div></div><div class="act-body"><div class="act-title">Clear overhead branch</div><div class="act-meta">1.95m clearance at east · Minimum 2.0m required</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div class="card">
+            <div class="card-head"><span class="card-title">Submit report</span></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-primary" style="width:100%;font-size:12px;padding:12px">Submit to PTV maintenance</button>
+              <button class="btn btn-outline" style="width:100%;font-size:12px;padding:12px">Save as draft</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
