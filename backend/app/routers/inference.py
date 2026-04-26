@@ -4,12 +4,17 @@ import io
 import os
 import cv2
 import numpy as np
+from ultralytics import YOLO
 
 router = APIRouter(prefix="/inference", tags=["inference"])
 
-# Placeholder — Nadil will provide the trained model path
+# Generic/base YOLO model
 MODEL_PATH = "yolo26s.pt"
 model = None
+
+# Custom fine-tuned wheelchair model
+WHEELCHAIR_MODEL_PATH = "models/wheelchair.pt"
+wheelchair_model = None
 
 def draw_boxes(image, detections):
     """Draw bounding boxes and labels onto the uploaded image."""
@@ -36,15 +41,26 @@ def draw_boxes(image, detections):
     return img
 
 def load_model():
-    """Load YOLO model — call this once model is trained."""
-    global model
+    """Load the base YOLO model and the custom wheelchair model."""
+    global model, wheelchair_model
+
     try:
-        from ultralytics import YOLO
         model = YOLO(MODEL_PATH)
-        print(f"Model loaded from {MODEL_PATH}")
+        print(f"Base model loaded from {MODEL_PATH}")
     except Exception as e:
         model = None
-        print(f"Model not loaded yet: {e}")
+        print(f"Base model not loaded yet: {e}")
+
+    try:
+        if os.path.exists(WHEELCHAIR_MODEL_PATH):
+            wheelchair_model = YOLO(WHEELCHAIR_MODEL_PATH)
+            print(f"Wheelchair model loaded from {WHEELCHAIR_MODEL_PATH}")
+        else:
+            wheelchair_model = None
+            print(f"Wheelchair model not found at {WHEELCHAIR_MODEL_PATH}")
+    except Exception as e:
+        wheelchair_model = None
+        print(f"Wheelchair model not loaded yet: {e}")
 
 load_model()
 
@@ -120,3 +136,54 @@ async def scan_image(file: UploadFile = File(...)):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}")
+
+@router.post("/scan-wheelchair")
+async def scan_wheelchair(file: UploadFile = File(...)):
+    """
+    Receive an image and return detection results from the fine-tuned wheelchair model.
+    This endpoint is kept separate so the current generic scan flow is not affected.
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    contents = await file.read()
+    try:
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=400, detail="Invalid image file")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not process image")
+
+    width, height = image.size
+
+    if wheelchair_model is None:
+        raise HTTPException(status_code=500, detail="Wheelchair model not loaded")
+
+    try:
+        results = wheelchair_model.predict(image, conf=0.25)
+        detections = []
+
+        for result in results:
+            for box in result.boxes:
+                class_id = int(box.cls[0])
+                confidence = round(float(box.conf[0]), 4)
+                bbox = [round(float(x), 2) for x in box.xyxy[0].tolist()]
+
+                detections.append({
+                    "class": result.names[class_id],
+                    "confidence": confidence,
+                    "bbox": bbox,
+                })
+
+        return {
+            "status": "success",
+            "filename": file.filename,
+            "image_size": {
+                "width": width,
+                "height": height,
+            },
+            "detections": detections,
+            "total_detections": len(detections),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Wheelchair inference failed: {str(e)}")
