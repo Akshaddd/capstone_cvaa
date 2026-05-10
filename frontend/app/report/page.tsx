@@ -7,12 +7,33 @@ type DetectedFeature = {
   confidence_percentage: number;
 };
 
+type DSAPTCheck = {
+  feature: string;
+  status: string;
+  result: string;
+  reference: string;
+  requirement: string;
+  victoria_context: string;
+};
+
 type ReportResponse = {
   title: string;
   summary: string;
   detected_features: DetectedFeature[];
   missing_features: string[];
+  dsapt_checks?: DSAPTCheck[];
   boxed_image_path?: string;
+};
+
+type ScanHistoryItem = {
+  id: string;
+  date: string;
+  filename: string;
+  title: string;
+  summary: string;
+  detectedCount: number;
+  missingCount: number;
+  boxedImageUrl?: string;
 };
 
 export default function ReportPage() {
@@ -60,14 +81,35 @@ export default function ReportPage() {
 
       setReport(data);
 
+      let finalBoxedImageUrl: string | undefined;
+
       if (data.boxed_image_path) {
         const normalisedPath = data.boxed_image_path.startsWith("/")
           ? data.boxed_image_path
           : `/${data.boxed_image_path}`;
 
-        setBoxedImageUrl(`${API_URL}${encodeURI(normalisedPath)}`);
-        console.log("boxed image url:", `${API_URL}${encodeURI(normalisedPath)}`);
+        finalBoxedImageUrl = `${API_URL}${encodeURI(normalisedPath)}`;
+        setBoxedImageUrl(finalBoxedImageUrl);
+        console.log("boxed image url:", finalBoxedImageUrl);
       }
+
+      const historyItem: ScanHistoryItem = {
+        id: crypto.randomUUID(),
+        date: new Date().toISOString(),
+        filename: file.name,
+        title: data.title,
+        summary: data.summary,
+        detectedCount: data.detected_features?.length || 0,
+        missingCount: data.missing_features?.length || 0,
+        boxedImageUrl: finalBoxedImageUrl,
+      };
+
+      const existingHistory = JSON.parse(localStorage.getItem("scanHistory") || "[]");
+
+      localStorage.setItem(
+        "scanHistory",
+        JSON.stringify([historyItem, ...existingHistory])
+      );
     } catch {
       setError("Could not connect to backend.");
     } finally {
@@ -540,6 +582,134 @@ export default function ReportPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 24,
+                padding: 24,
+                boxShadow: "0 10px 24px rgba(15, 23, 42, 0.05)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  alignItems: "start",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 21, fontWeight: 800 }}>
+                    DSAPT Compliance Indicators
+                  </h3>
+                  <p style={{ margin: "8px 0 0", color: "#64748b", fontSize: 14, lineHeight: 1.6 }}>
+                    Preliminary checks based on selected DSAPT-related accessibility indicators relevant to Victorian public transport.
+                  </p>
+                </div>
+                <div
+                  style={{
+                    borderRadius: 999,
+                    background: "#eef2ff",
+                    color: "#3730a3",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    padding: "8px 12px",
+                    border: "1px solid #c7d2fe",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Preliminary check only
+                </div>
+              </div>
+
+              <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
+                {report.dsapt_checks && report.dsapt_checks.length > 0 ? (
+                  report.dsapt_checks.map((item, index) => {
+                    const isDetected = item.status.toLowerCase() === "detected";
+
+                    return (
+                      <div
+                        key={`${item.feature}-${index}`}
+                        style={{
+                          border: "1px solid #e2e8f0",
+                          borderRadius: 16,
+                          padding: 16,
+                          background: "#fcfdff",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 12,
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: 16, fontWeight: 800 }}>{item.feature}</div>
+                            <div style={{ marginTop: 4, fontSize: 13, color: "#64748b" }}>
+                              {item.reference}
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              borderRadius: 999,
+                              background: isDetected ? "#ecfdf5" : "#fff7ed",
+                              color: isDetected ? "#166534" : "#9a3412",
+                              fontSize: 13,
+                              fontWeight: 800,
+                              padding: "6px 10px",
+                              border: isDetected ? "1px solid #bbf7d0" : "1px solid #fed7aa",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {item.status}
+                          </div>
+                        </div>
+
+                        <p style={{ margin: "12px 0 0", color: "#475569", lineHeight: 1.65, fontSize: 14 }}>
+                          {item.requirement}
+                        </p>
+
+                        <div
+                          style={{
+                            marginTop: 12,
+                            borderRadius: 14,
+                            background: isDetected ? "#f0fdf4" : "#fff7ed",
+                            color: isDetected ? "#166534" : "#9a3412",
+                            padding: "10px 12px",
+                            fontSize: 13,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {item.result}
+                        </div>
+
+                        <p style={{ margin: "10px 0 0", color: "#64748b", fontSize: 13, lineHeight: 1.6 }}>
+                          {item.victoria_context}
+                        </p>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div
+                    style={{
+                      border: "1px dashed #cbd5e1",
+                      borderRadius: 16,
+                      padding: 18,
+                      color: "#64748b",
+                      background: "#f8fafc",
+                    }}
+                  >
+                    No DSAPT checks were returned for this report.
+                  </div>
+                )}
               </div>
             </div>
           </section>

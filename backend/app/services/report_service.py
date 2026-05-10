@@ -1,4 +1,5 @@
 from app.models.report_models import ReportRequest, ReportResponse, DetectionOutput
+from app.services.dsapt_service import check_dsapt_compliance
 
 def build_report(request: ReportRequest) -> ReportResponse:
     detected_features = [
@@ -23,6 +24,8 @@ def build_report(request: ReportRequest) -> ReportResponse:
         f"{len(detected_features)} feature(s) were detected by the computer vision model."
     )
 
+    dsapt_checks = check_dsapt_compliance(detected_features)
+
     if request.notes:
         summary += f"\n\nClaude Vision Assessment:\n{request.notes}"
 
@@ -31,5 +34,6 @@ def build_report(request: ReportRequest) -> ReportResponse:
         summary=summary,
         detected_features=detected_features,
         missing_features=request.missing_features,
-        recommendations=recommendations
+        recommendations=recommendations,
+        dsapt_checks=dsapt_checks
     )

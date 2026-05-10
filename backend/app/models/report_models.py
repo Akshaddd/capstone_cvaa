@@ -24,9 +24,19 @@ class DetectionOutput(BaseModel):
     confidence_percentage: float
 
 
+class DSAPTCheck(BaseModel):
+    feature: str
+    status: str
+    result: str
+    reference: str
+    requirement: str
+    victoria_context: str
+
+
 class ReportResponse(BaseModel):
     title: str
     summary: str
     detected_features: List[DetectionOutput]
     missing_features: List[str]
     recommendations: List[str]
+    dsapt_checks: List[DSAPTCheck] = []
