@@ -1,6 +1,5 @@
 from app.models.report_models import ReportRequest, ReportResponse, DetectionOutput
 
-
 def build_report(request: ReportRequest) -> ReportResponse:
     detected_features = [
         DetectionOutput(
@@ -11,7 +10,6 @@ def build_report(request: ReportRequest) -> ReportResponse:
     ]
 
     recommendations = []
-
     if request.missing_features:
         for feature in request.missing_features:
             recommendations.append(
@@ -22,8 +20,11 @@ def build_report(request: ReportRequest) -> ReportResponse:
 
     summary = (
         f"This report summarises accessibility features for the {request.transport_type}. "
-        f"{len(detected_features)} feature(s) were detected."
+        f"{len(detected_features)} feature(s) were detected by the computer vision model."
     )
+
+    if request.notes:
+        summary += f"\n\nClaude Vision Assessment:\n{request.notes}"
 
     return ReportResponse(
         title=f"{request.transport_type.title()} Accessibility Report",

@@ -40,4 +40,37 @@ backend/.pytest_cache/
 .idea/
 venv/
 __pycache__/
+<<<<<<< HEAD
+*.pycbackend/outputs/
+backend/outputs/
+=======
 *.pyc
+backend/outputs/boxed_3b3d2de77fdb65f955a040a201f14d3b8e2640ac1d4baa6be4c40735ca2299c8.jpg
+backend/outputs/boxed_10_png_jpg.rf.10ae693bb011b90ea77f1f3dc2337488.jpg
+backend/outputs/boxed_chair2_15174_jpg.rf.7ce8443471569986dc9a918cc0b1eed8.jpg
+backend/outputs/boxed_Image.jpg
+backend/outputs/boxed_images-2.jpg
+backend/outputs/boxed_IMG_9671.jpg
+backend/outputs/boxed_melbourne-tram-at-platform-2.jpg
+backend/outputs/boxed_test1.jpg
+backend/outputs/boxed_WhatsApp Image 2026-04-06 at 11.51.40.jpg
+backend/outputs/boxed_WhatsApp Image 2026-04-13 at 10.37.17.jpg
+backend/outputs/combined_boxed_11_png_jpg.rf.6bf58f1f3a03475e1d124f90bdf913d0.jpg
+backend/outputs/combined_boxed_bussss.jpg
+backend/outputs/combined_boxed_DTP_TASF-Bonbeach-station-2.jpg
+backend/outputs/combined_boxed_E117_1623_500.jpg
+backend/outputs/combined_boxed_gettyimages-2234632364-612x612.jpg
+backend/outputs/combined_boxed_ico-yarratrams.jpg
+backend/outputs/combined_boxed_Image_1_3.jpg
+backend/outputs/combined_boxed_Image_3_2.jpg
+backend/outputs/combined_boxed_Kinetic-Try-Before-You-Ride-48.jpg
+backend/outputs/combined_boxed_Melbourne_Tram_E-Class_6007.jpg
+backend/outputs/combined_boxed_park-stop-2.jpg
+backend/outputs/combined_boxed_PPM1469.jpg
+backend/outputs/combined_boxed_rail_test.jpg
+backend/outputs/combined_boxed_tactile-gallery-2.jpg.jpg
+backend/outputs/combined_boxed_test1.jpg
+backend/outputs/combined_boxed_test2.jpg
+backend/outputs/combined_boxed_tram_test.jpg
+backend/outputs/combined_boxed_Transdev_10_flinders-station_003-1920x768.jpg
+>>>>>>> 81d2381 (feat: add tactile paving model and update inference logic)
