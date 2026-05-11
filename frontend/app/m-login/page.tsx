@@ -20,46 +20,46 @@ export default function MobileLoginPage() {
     if (dest && password.length > 0) {
       router.push(dest);
     } else {
-      setError("Try user@, ptv@ or council@ @myaccess.com with any password");
+      setError("Invalid credentials. Please try again.");
     }
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
-      <section className="w-full max-w-sm overflow-hidden rounded-[32px] bg-white shadow-2xl">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <section className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-xl border border-slate-200">
         {/* Status bar */}
-        <div className="flex items-center justify-between bg-white px-6 py-3">
+        <div className="flex items-center justify-between px-6 pt-4 pb-2">
           <span className="text-sm font-semibold text-emerald-700">9:41</span>
-          <div className="flex gap-2">
-            <div className="h-3 w-5 rounded bg-emerald-700" />
-            <div className="h-3 w-6 rounded border border-emerald-700" />
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-5 rounded-sm bg-emerald-700" />
+            <div className="h-2.5 w-6 rounded-sm border border-slate-300" />
           </div>
         </div>
 
         {/* Logo */}
-        <div className="flex flex-col items-center px-8 pt-10 pb-2 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-700 shadow-lg">
-            <svg width="36" height="36" viewBox="0 0 34 34" fill="none">
-              <rect x="5" y="9" width="20" height="14" rx="3" fill="white" />
-              <rect x="8" y="12" width="5" height="4" rx="1" fill="#0D7A5F" />
-              <rect x="15" y="12" width="5" height="4" rx="1" fill="#0D7A5F" />
-              <circle cx="10" cy="24" r="2" fill="white" />
-              <circle cx="20" cy="24" r="2" fill="white" />
-              <line x1="4" y1="24" x2="26" y2="24" stroke="white" strokeWidth="1.5" opacity=".5" />
-              <circle cx="27" cy="9" r="5" fill="white" />
-              <circle cx="27" cy="9" r="2.5" fill="#0D7A5F" />
+        <div className="flex flex-col items-center px-8 pt-10 pb-4 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-700 shadow-md">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="2" y="8" width="18" height="12" rx="2.5" fill="white" />
+              <rect x="5" y="11" width="4" height="3" rx="0.8" fill="#047857" />
+              <rect x="11" y="11" width="4" height="3" rx="0.8" fill="#047857" />
+              <circle cx="7" cy="21" r="1.8" fill="white" />
+              <circle cx="15" cy="21" r="1.8" fill="white" />
+              <line x1="2" y1="21" x2="22" y2="21" stroke="white" strokeWidth="1.2" opacity=".5" />
+              <circle cx="23" cy="7" r="4" fill="white" />
+              <circle cx="23" cy="7" r="2" fill="#047857" />
             </svg>
           </div>
-          <h1 className="mt-4 text-3xl font-bold text-slate-900">MyAccess</h1>
+          <h1 className="mt-4 text-2xl font-bold text-slate-900">MyAccess</h1>
           <p className="mt-1 text-sm text-slate-500">Melbourne accessibility network</p>
         </div>
 
         {/* Form */}
-        <div className="space-y-4 px-8 pb-10 pt-5">
+        <div className="space-y-4 px-8 pb-10 pt-6">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Email address</label>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Email</label>
             <input
-              className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
               type="email"
               placeholder="you@myaccess.com"
               value={email}
@@ -69,9 +69,9 @@ export default function MobileLoginPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600 uppercase tracking-wide">Password</label>
             <input
-              className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
               type="password"
               placeholder="••••••••"
               value={password}
@@ -80,18 +80,20 @@ export default function MobileLoginPage() {
             />
           </div>
 
-          {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>}
+          {error && (
+            <p className="rounded-xl bg-red-50 border border-red-100 px-3 py-2 text-xs font-medium text-red-600">{error}</p>
+          )}
 
           <button
             onClick={handleLogin}
-            className="w-full rounded-2xl bg-emerald-700 py-3.5 font-semibold text-white shadow-md active:opacity-80 transition-opacity"
+            className="w-full rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white shadow-sm transition active:opacity-80"
           >
-            Continue
+            Sign in
           </button>
 
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-xs text-slate-400">
             No account?{" "}
-            <span className="font-medium text-emerald-700 cursor-pointer">Create one for free</span>
+            <span className="font-semibold text-emerald-700 cursor-pointer">Register</span>
           </p>
         </div>
       </section>
