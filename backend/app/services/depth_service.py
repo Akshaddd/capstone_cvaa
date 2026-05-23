@@ -20,10 +20,17 @@ REFERENCE_OBJECTS = {
     "bus_door": 1.90,
 }
 
-DSAPT_LABELS = {"ramp", "platform_edge", "tactile_paving", "tram", "bus", "step", "handrail"}
+DSAPT_LABELS = {"ramp", "platform_edge", "tactile_paving", "tram", "bus", "step", "handrail", "step_gap"}
+
+# Anchor labels — objects with known real-world sizes used for metric scaling
+ANCHOR_LABELS = {
+    "tram": ("tram_door", 2.00),
+    "bus": ("bus_door", 1.90),
+    "ramp": ("wheelchair_ramp", 0.30),
+}
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_ID = "depth-anything/Depth-Anything-V2-Small-hf"
+MODEL_ID = "depth-anything/Depth-Anything-V2-Large-hf"
 
 @dataclass
 class DepthResult:
@@ -53,15 +60,36 @@ def colourise_depth(depth_map):
     return cv2.applyColorMap(depth_uint8, cv2.COLORMAP_INFERNO)
 
 def anchor_to_metric(depth_map, bbox, known_height_m, image_height_px):
-    x1, y1, x2, y2 = bbox
+    x1, y1, x2, y2 = [int(v) for v in bbox]
+    x1, y1 = max(0, x1), max(0, y1)
+    x2, y2 = min(depth_map.shape[1] - 1, x2), min(depth_map.shape[0] - 1, y2)
+    if y2 <= y1 or x2 <= x1:
+        return None
     obj_depth_mean = depth_map[y1:y2, x1:x2].mean()
     obj_height_px = y2 - y1
-    if obj_depth_mean < 1e-6:
+    if obj_depth_mean < 1e-6 or obj_height_px < 5:
         return None
-    return known_height_m / (obj_height_px / image_height_px / obj_depth_mean)
+    return float(known_height_m / (obj_height_px / image_height_px / obj_depth_mean))
+
+def compute_metric_scale(depth_map, detections, image_height_px):
+    """
+    Average metric scale across all detected anchor objects.
+    More anchors = more stable scale estimate.
+    """
+    scales = []
+    for det in detections:
+        label = det["label"]
+        if label in ANCHOR_LABELS:
+            _, known_h = ANCHOR_LABELS[label]
+            scale = anchor_to_metric(depth_map, det["bbox"], known_h, image_height_px)
+            if scale is not None:
+                scales.append(scale)
+    if not scales:
+        return None
+    # Trim outliers if multiple anchors — use median for robustness
+    return float(np.median(scales))
 
 def draw_measurement(image, pt1, pt2, label, color=(0, 255, 0)):
-    """Draw a measurement line between two points with a label at the midpoint."""
     cv2.line(image, pt1, pt2, color, 2, cv2.LINE_AA)
     cv2.circle(image, pt1, 5, color, -1)
     cv2.circle(image, pt2, 5, color, -1)
@@ -81,17 +109,28 @@ def draw_measurement(image, pt1, pt2, label, color=(0, 255, 0)):
     bx2 = min(w, mid_x + text_w // 2 + padding)
     by2 = min(h, mid_y + padding)
 
+    if by1 >= by2:
+        by1 = max(0, mid_y - text_h - padding)
+        by2 = mid_y + padding
+
     cv2.rectangle(image, (bx1, by1), (bx2, by2), (0, 0, 0), -1)
     cv2.putText(image, label, (bx1 + padding, by2 - padding), font, font_scale, color, thickness)
 
+def fmt(depth_val, metric_scale):
+    if metric_scale:
+        return f"{depth_val * metric_scale:.2f}m (est)"
+    return f"{depth_val:.2f} (rel)"
+
+def depth_at_bbox(depth_map, bbox):
+    h, w = depth_map.shape
+    x1, y1, x2, y2 = [int(v) for v in bbox]
+    x1, y1 = max(0, x1), max(0, y1)
+    x2, y2 = min(w - 1, x2), min(h - 1, y2)
+    if y2 <= y1 or x2 <= x1:
+        return 0.0
+    return float(depth_map[y1:y2, x1:x2].mean())
+
 def annotate_dsapt_measurements(image, depth_map, detections, metric_scale):
-    """
-    Draw DSAPT-relevant measurements only on the original image.
-    - Ramp: line across the full length of the ramp bbox
-    - Platform gap: line from platform_edge to bus/tram door
-    - Tactile paving: line across its width
-    - Step: line across its height
-    """
     annotated = image.copy()
     h, w = annotated.shape[:2]
 
@@ -101,35 +140,22 @@ def annotate_dsapt_measurements(image, depth_map, detections, metric_scale):
         if label in DSAPT_LABELS:
             by_label.setdefault(label, []).append(det)
 
-    def depth_at_bbox(bbox):
-        x1, y1, x2, y2 = bbox
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(w - 1, x2), min(h - 1, y2)
-        return float(depth_map[y1:y2, x1:x2].mean())
-
-    def fmt(depth_val):
-        if metric_scale:
-            return f"{depth_val * metric_scale:.2f}m (est)"
-        return f"{depth_val:.2f} (rel)"
-
     measurements = {}
     flags = []
 
-    # ── Ramp: measure length top to bottom of bbox ────────────────────────────
+    # ── Ramp: vertical line across bbox height ────────────────────────────────
     for det in by_label.get("ramp", []):
         x1, y1, x2, y2 = det["bbox"]
         cx = int((x1 + x2) / 2)
         pt1 = (cx, int(y1))
         pt2 = (cx, int(y2))
-        depth_val = depth_at_bbox(det["bbox"])
-        label = f"ramp length: {fmt(depth_val)}"
-        draw_measurement(annotated, pt1, pt2, label, color=(0, 255, 0))
-        measurements["ramp_depth"] = depth_val
+        dval = depth_at_bbox(depth_map, det["bbox"])
+        draw_measurement(annotated, pt1, pt2, f"ramp: {fmt(dval, metric_scale)}", color=(0, 255, 0))
+        measurements["ramp_depth"] = dval
         if metric_scale:
-            est = depth_val * metric_scale
-            flags.append(f"Ramp detected at ~{est:.2f}m from camera")
+            flags.append(f"Ramp detected at ~{dval * metric_scale:.2f}m from camera")
 
-    # ── Platform gap: line from platform_edge right edge to bus/tram left edge ─
+    # ── Platform gap: line from platform_edge to vehicle ─────────────────────
     platform_dets = by_label.get("platform_edge", [])
     vehicle_dets = by_label.get("tram", by_label.get("bus", []))
     if platform_dets and vehicle_dets:
@@ -137,40 +163,57 @@ def annotate_dsapt_measurements(image, depth_map, detections, metric_scale):
         veh = vehicle_dets[0]["bbox"]
         pt1 = (int(pe[2]), int((pe[1] + pe[3]) / 2))
         pt2 = (int(veh[0]), int((veh[1] + veh[3]) / 2))
-        gap_depth = abs(depth_at_bbox(pe) - depth_at_bbox(veh))
-        label = f"platform gap: {fmt(gap_depth)}"
-        draw_measurement(annotated, pt1, pt2, label, color=(0, 165, 255))
+        gap_depth = abs(depth_at_bbox(depth_map, pe) - depth_at_bbox(depth_map, veh))
+        draw_measurement(annotated, pt1, pt2, f"platform gap: {fmt(gap_depth, metric_scale)}", color=(0, 165, 255))
         measurements["platform_gap_depth"] = gap_depth
         if metric_scale:
             gap_m = gap_depth * metric_scale
             compliant = gap_m <= DSAPT_THRESHOLDS["platform_gap_max"]
             flags.append(f"{'PASS' if compliant else 'FAIL'}: Platform gap ~{gap_m:.3f}m (limit 50mm)")
 
-    # ── Tactile paving: line across width ────────────────────────────────────
+    # ── Tactile paving: horizontal line across width ──────────────────────────
     for det in by_label.get("tactile_paving", []):
         x1, y1, x2, y2 = det["bbox"]
         cy = int((y1 + y2) / 2)
         pt1 = (int(x1), cy)
         pt2 = (int(x2), cy)
-        depth_val = depth_at_bbox(det["bbox"])
-        label = f"tactile paving: {fmt(depth_val)}"
-        draw_measurement(annotated, pt1, pt2, label, color=(255, 200, 0))
-        measurements["tactile_paving_depth"] = depth_val
+        dval = depth_at_bbox(depth_map, det["bbox"])
+        draw_measurement(annotated, pt1, pt2, f"tactile paving: {fmt(dval, metric_scale)}", color=(255, 200, 0))
+        measurements["tactile_paving_depth"] = dval
 
-    # ── Step: line across height ──────────────────────────────────────────────
+    # ── Step: vertical line across bbox height ────────────────────────────────
     for det in by_label.get("step", []):
         x1, y1, x2, y2 = det["bbox"]
         cx = int((x1 + x2) / 2)
         pt1 = (cx, int(y1))
         pt2 = (cx, int(y2))
-        depth_val = depth_at_bbox(det["bbox"])
-        label = f"step height: {fmt(depth_val)}"
-        draw_measurement(annotated, pt1, pt2, label, color=(0, 0, 255))
-        measurements["step_depth"] = depth_val
+        dval = depth_at_bbox(depth_map, det["bbox"])
+        draw_measurement(annotated, pt1, pt2, f"step height: {fmt(dval, metric_scale)}", color=(0, 0, 255))
+        measurements["step_depth"] = dval
         if metric_scale:
-            est = depth_val * metric_scale
+            est = dval * metric_scale
             compliant = est <= DSAPT_THRESHOLDS["step_height_max"]
             flags.append(f"{'PASS' if compliant else 'FAIL'}: Step height ~{est:.3f}m (limit 190mm)")
+
+    # ── Step gap: horizontal line across width ────────────────────────────────
+    for det in by_label.get("step_gap", []):
+        x1, y1, x2, y2 = det["bbox"]
+        cy = int((y1 + y2) / 2)
+        pt1 = (int(x1), cy)
+        pt2 = (int(x2), cy)
+        dval = depth_at_bbox(depth_map, det["bbox"])
+        draw_measurement(annotated, pt1, pt2, f"step gap: {fmt(dval, metric_scale)}", color=(255, 0, 255))
+        measurements["step_gap_depth"] = dval
+
+    # ── Handrail: horizontal line across width ────────────────────────────────
+    for det in by_label.get("handrail", []):
+        x1, y1, x2, y2 = det["bbox"]
+        cy = int((y1 + y2) / 2)
+        pt1 = (int(x1), cy)
+        pt2 = (int(x2), cy)
+        dval = depth_at_bbox(depth_map, det["bbox"])
+        draw_measurement(annotated, pt1, pt2, f"handrail: {fmt(dval, metric_scale)}", color=(255, 100, 0))
+        measurements["handrail_depth"] = dval
 
     return annotated, measurements, flags
 
@@ -178,8 +221,13 @@ def process_frame(depth_pipe, frame, yolo_detections=None, reference_bbox=None, 
     depth_map = estimate_depth(depth_pipe, frame)
     depth_coloured = colourise_depth(depth_map)
 
+    # Compute metric scale by averaging across all valid anchor detections
     metric_scale = None
-    if reference_bbox:
+    if yolo_detections:
+        metric_scale = compute_metric_scale(depth_map, yolo_detections, frame.shape[0])
+
+    # Fallback to single reference bbox if provided and no anchors found
+    if metric_scale is None and reference_bbox is not None:
         known_h = REFERENCE_OBJECTS.get(reference_object, 2.0)
         metric_scale = anchor_to_metric(depth_map, reference_bbox, known_h, frame.shape[0])
 
@@ -192,7 +240,7 @@ def process_frame(depth_pipe, frame, yolo_detections=None, reference_bbox=None, 
             frame, depth_map, yolo_detections, metric_scale
         )
 
-    # Side-by-side: annotated original on left, clean heatmap on right
+    # Side-by-side: annotated original left, clean heatmap right
     heatmap_resized = cv2.resize(depth_coloured, (frame.shape[1], frame.shape[0]))
     combined = np.hstack([annotated_image, heatmap_resized])
 
