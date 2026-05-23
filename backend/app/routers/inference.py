@@ -294,7 +294,9 @@ async def scan_combined(file: UploadFile = File(...)):
                 _, depth_output_path = build_output_path(file.filename, prefix="depth")
                 depth_resized = cv2.resize(depth_result.depth_coloured, (width, height))
                 cv2.imwrite(depth_output_path, depth_resized)
-                depth_data = {"status": "success", "depth_image_path": depth_output_path, "metric_scale": depth_result.metric_scale, "measurements": depth_result.measurements, "flags": depth_result.flags}
+                _, annot_path = build_output_path(file.filename, prefix="annotated_depth")
+                cv2.imwrite(annot_path, depth_result.annotated_image)
+                depth_data = {"status": "success", "depth_image_path": depth_output_path, "metric_scale": float(depth_result.metric_scale) if depth_result.metric_scale is not None else None, "measurements": depth_result.measurements, "flags": depth_result.flags, "annotated_image_path": annot_path}
             except Exception as e:
                 depth_data = {"status": "error", "detail": str(e)}
         return {"status": "success", "filename": file.filename, "image_size": {"width": width, "height": height}, "detections": detections, "total_detections": len(detections), "models_used": models_used, "boxed_image_path": output_path, "depth": depth_data}
