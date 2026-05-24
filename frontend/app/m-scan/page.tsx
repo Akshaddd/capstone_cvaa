@@ -1,177 +1,234 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { ThemeProvider, ThemeToggle, BottomNav } from "../shared";
 
-const CHECKLIST = [
-  ["Tactile ground surface", "Boarding zone floor"],
-  ["Kerb ramp", "Full ramp including gradient"],
-  ["Accessible signage", "Stop sign and route boards"],
-  ["Platform edge / gap", "Close-up of boarding gap"],
-  ["Path of travel", "Approach from footpath to stop"],
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const NAV = [
-  { label: "Home", route: "/m-home" },
-  { label: "Scan", route: "/m-scan" },
-  { label: "Map", route: "/m-map" },
-  { label: "Reports", route: "/m-report" },
+  { label: "Home",    href: "/m-home"   },
+  { label: "Scan",    href: "/m-scan"   },
+  { label: "Map",     href: "/m-map"    },
+  { label: "Reports", href: "/m-report" },
 ];
 
-export default function MobileScanPage() {
-  const router = useRouter();
-  const [files, setFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedStop, setSelectedStop] = useState<{ id: string; name: string; mode: string } | null>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const galleryRef = useRef<HTMLInputElement>(null);
+const CHECKLIST = [
+  { label: "Tactile ground surface", hint: "Boarding zone floor"             },
+  { label: "Kerb ramp",              hint: "Full ramp including gradient"     },
+  { label: "Accessible signage",     hint: "Stop sign and route boards"       },
+  { label: "Platform edge / gap",    hint: "Close-up of boarding gap"         },
+  { label: "Path of travel",         hint: "Approach from footpath to stop"   },
+];
 
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("selectedStop");
-      if (raw) setSelectedStop(JSON.parse(raw));
-    } catch {}
-  }, []);
+// Hardcoded demo result used if backend is unreachable
+const DEMO_RESULT = {
+  detections: [
+    { class: "tactile",   confidence: 0.91, bbox: [] },
+    { class: "ramp",      confidence: 0.83, bbox: [] },
+    { class: "stop_sign", confidence: 0.52, bbox: [] },
+    { class: "gap",       confidence: 0.28, bbox: [] },
+  ],
+  _demo: true,
+};
 
-  function handleFiles(selected: FileList | null) {
-    if (!selected) return;
-    const valid = Array.from(selected).filter((f) => f.size <= 20 * 1024 * 1024);
-    setFiles((prev) => [...prev, ...valid].slice(0, 6));
+function ScanContent() {
+  const searchParams = useSearchParams();
+
+  const stopId     = searchParams.get("id")     ?? "";
+  const stopName   = searchParams.get("name")   ?? "";
+  const stopMode   = searchParams.get("mode")   ?? "";
+  const stopStatus = searchParams.get("status") ?? "";
+
+  const [files,    setFiles]    = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [loading,  setLoading]  = useState(false);
+  const [status,   setStatus]   = useState<string | null>(null);
+  const [error,    setError]    = useState<string | null>(null);
+
+  function addFiles(list: FileList | null) {
+    if (!list || list.length === 0) { setError("No image selected."); return; }
+    const incoming = Array.from(list).filter(
+      (f) => f.type.startsWith("image/") && f.size <= 20 * 1024 * 1024
+    );
+    if (!incoming.length) { setError("Please choose an image file under 20 MB."); return; }
+    const nextFiles = [...files, ...incoming].slice(0, 6);
+    previews.forEach((u) => URL.revokeObjectURL(u));
+    setFiles(nextFiles);
+    setPreviews(nextFiles.map((f) => URL.createObjectURL(f)));
     setError(null);
   }
 
-  function removeFile(i: number) {
-    setFiles((prev) => prev.filter((_, idx) => idx !== i));
+  function removeFile(index: number) {
+    const nextFiles = files.filter((_, i) => i !== index);
+    previews.forEach((u) => URL.revokeObjectURL(u));
+    setFiles(nextFiles);
+    setPreviews(nextFiles.map((f) => URL.createObjectURL(f)));
   }
 
-  async function handleAnalyse() {
-    if (files.length === 0) { setError("Add at least one photo first."); return; }
+  async function analyse() {
+    if (!files.length) { setError("Add at least one photo first."); return; }
     setLoading(true);
     setError(null);
+    setStatus("Uploading image…");
+
+    const stopMeta = { id: stopId, name: stopName, mode: stopMode, status: stopStatus };
+
     try {
-      const formData = new FormData();
-      files.forEach((f) => formData.append("file", f));
-      const res = await fetch("http://localhost:8000/inference/scan-combined", { method: "POST", body: formData });
-      if (!res.ok) throw new Error(`Backend error: ${res.status}`);
+      setStatus("Running AI scan…");
+      const form = new FormData();
+      files.forEach((file) => {
+        form.append("file",  file);
+        form.append("files", file);
+        form.append("image", file);
+      });
+
+      // Try backend with a 15s timeout
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15_000);
+
+      const res = await fetch(`${API_BASE}/inference/scan-combined`, {
+        method: "POST",
+        body: form,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
-      sessionStorage.setItem("scanResult", JSON.stringify(data));
-      router.push("/m-report");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+
+      sessionStorage.setItem("scanResult", JSON.stringify({
+        ...data,
+        selectedStop: stopMeta,
+        stopName, stopMode, stopStatus,
+        scannedAt: new Date().toISOString(),
+        _demo: false,
+      }));
+    } catch (e) {
+      // Backend unreachable — use hardcoded demo data so demo still works
+      console.warn("Backend unavailable, using demo data:", e);
+      setStatus("Backend offline — using demo data…");
+      await new Promise((r) => setTimeout(r, 800));
+      sessionStorage.setItem("scanResult", JSON.stringify({
+        ...DEMO_RESULT,
+        selectedStop: stopMeta,
+        stopName, stopMode, stopStatus,
+        scannedAt: new Date().toISOString(),
+      }));
     } finally {
       setLoading(false);
+      setStatus(null);
+      window.location.href = "/m-report";
     }
   }
 
-  const stopName = selectedStop?.name ?? "Stop 301 — Reservoir Station";
-  const stopSub = selectedStop ? `${selectedStop.mode} stop` : "Bundoora / La Trobe · Tram Route 86";
-
   return (
-    <main className="mx-auto min-h-screen max-w-sm bg-slate-50 text-slate-900">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          <span className="text-sm font-semibold text-emerald-700">9:41</span>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-5 rounded-sm bg-emerald-700" />
-            <div className="h-2.5 w-6 rounded-sm border border-slate-300" />
-          </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 pb-4 pt-5 dark:border-slate-800 dark:bg-slate-900">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Scan Stop</h1>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Upload photos to generate report</p>
         </div>
-        <div className="flex items-center justify-between px-5 pb-4">
-          <div>
-            <h1 className="text-lg font-bold text-slate-900">Scan Stop</h1>
-            <p className="text-xs text-slate-400">Upload photos to check accessibility</p>
-          </div>
-          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
             {files.length}/6
           </span>
         </div>
-      </div>
+      </header>
 
-      <div className="space-y-3 p-4">
-        {/* Camera / Gallery buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => cameraRef.current?.click()}
-            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-emerald-700 py-5 text-white transition active:opacity-80"
-          >
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-            <span className="text-sm font-semibold">Camera</span>
-            <span className="text-[11px] opacity-70">Take a photo</span>
-          </button>
+      <main className="flex flex-col gap-3 p-4 pb-24">
 
-          <button
-            onClick={() => galleryRef.current?.click()}
-            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white py-5 text-slate-600 transition active:bg-slate-50"
-          >
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <span className="text-sm font-semibold">Gallery</span>
-            <span className="text-[11px] text-slate-400">Choose photo</span>
-          </button>
+        {/* Stop info */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            Stop to scan
+          </p>
+          {stopName ? (
+            <>
+              <p className="text-base font-bold text-slate-900 dark:text-white">{stopName}</p>
+              <p className="text-xs capitalize text-slate-400 dark:text-slate-500">{stopMode || "selected"} stop</p>
+            </>
+          ) : (
+            <p className="text-sm italic text-slate-400 dark:text-slate-500">No stop selected</p>
+          )}
+          <Link href="/m-map" className="mt-2 block text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            {stopName ? "Change stop →" : "Choose a stop on the map →"}
+          </Link>
         </div>
 
-        <input ref={cameraRef} type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
-        <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+        {/* Camera / Gallery */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative overflow-hidden rounded-2xl bg-emerald-700 py-6 text-center text-white active:bg-emerald-800">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
+              onChange={(e) => { addFiles(e.currentTarget.files); e.currentTarget.value = ""; }}
+            />
+            <div className="pointer-events-none flex flex-col items-center gap-2">
+              <span className="text-3xl">📷</span>
+              <span className="text-sm font-bold">Camera</span>
+              <span className="text-[11px] opacity-75">Take photo</span>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-2xl border-2 border-slate-200 bg-white py-6 text-center text-slate-600 active:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
+              onChange={(e) => { addFiles(e.currentTarget.files); e.currentTarget.value = ""; }}
+            />
+            <div className="pointer-events-none flex flex-col items-center gap-2">
+              <span className="text-3xl">🖼️</span>
+              <span className="text-sm font-bold">Gallery</span>
+              <span className="text-[11px] text-slate-400">Choose photos</span>
+            </div>
+          </div>
+        </div>
 
-        {/* Thumbnails */}
+        {/* Previews */}
         {files.length > 0 && (
-          <div className="rounded-2xl bg-white border border-slate-200 p-3">
-            <p className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">{files.length} photo{files.length > 1 ? "s" : ""} selected</p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+              {files.length} photo{files.length > 1 ? "s" : ""} selected
+            </p>
             <div className="flex flex-wrap gap-2">
-              {files.map((f, i) => (
-                <div key={i} className="relative h-14 w-14 overflow-hidden rounded-xl border border-slate-200">
-                  <img src={URL.createObjectURL(f)} alt={f.name} className="h-full w-full object-cover" />
+              {files.map((file, index) => (
+                <div key={`${file.name}-${index}`} className="relative h-20 w-20 overflow-hidden rounded-xl border border-slate-200">
+                  <img src={previews[index]} alt={file.name} className="h-full w-full object-cover" />
                   <button
-                    onClick={() => removeFile(i)}
-                    className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
-                  >×</button>
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
-              {files.length < 6 && (
-                <button
-                  onClick={() => galleryRef.current?.click()}
-                  className="flex h-14 w-14 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-xl text-slate-400"
-                >+</button>
-              )}
             </div>
           </div>
         )}
 
-        {/* Selected stop */}
-        <div className="rounded-2xl bg-white border border-slate-200 p-4">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1">Selected stop</p>
-          <p className="text-sm font-semibold text-slate-900">{stopName}</p>
-          <p className="text-xs text-slate-400">{stopSub}</p>
-          <button
-            onClick={() => router.push("/m-map")}
-            className="mt-2 text-xs font-semibold text-emerald-700"
-          >
-            Change stop
-          </button>
-        </div>
-
         {/* Checklist */}
-        <div className="rounded-2xl bg-white border border-slate-200 p-4">
-          <p className="mb-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">What to photograph</p>
-          <div className="space-y-2">
-            {CHECKLIST.map(([label, hint], i) => {
-              const done = i < files.length;
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            What to photograph
+          </p>
+          <div className="flex flex-col gap-2">
+            {CHECKLIST.map(({ label, hint }, index) => {
+              const done = index < files.length;
               return (
-                <div key={label} className={`flex gap-3 rounded-xl p-3 transition-colors ${done ? "bg-emerald-50" : "bg-slate-50"}`}>
-                  <div className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded text-[10px] font-bold ${done ? "bg-emerald-700 text-white" : "border border-slate-300 text-transparent"}`}>
+                <div key={label} className={`flex gap-3 rounded-xl p-3 ${done ? "bg-emerald-50 dark:bg-emerald-950/40" : "bg-slate-50 dark:bg-slate-800"}`}>
+                  <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-xs font-bold ${done ? "bg-emerald-700 text-white" : "border border-slate-300 text-transparent dark:border-slate-600"}`}>
                     ✓
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-slate-900">{label}</p>
-                    <p className="text-[10px] text-slate-400">{hint}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{label}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{hint}</p>
                   </div>
                 </div>
               );
@@ -180,34 +237,51 @@ export default function MobileScanPage() {
         </div>
 
         {error && (
-          <p className="rounded-xl bg-red-50 border border-red-100 px-3 py-2 text-xs font-medium text-red-600">{error}</p>
+          <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
+            {error}
+          </p>
         )}
 
-        {/* Analyse button */}
-        <div className="pb-6">
-          <button
-            onClick={handleAnalyse}
-            disabled={loading || files.length === 0}
-            className={`w-full rounded-2xl py-4 text-sm font-bold text-white transition-all ${
-              loading || files.length === 0
-                ? "bg-emerald-300 cursor-not-allowed"
-                : "bg-emerald-700 shadow-md active:opacity-80"
-            }`}
-          >
-            {loading ? "Analysing…" : `Analyse ${files.length > 0 ? files.length + " photo" + (files.length > 1 ? "s" : "") : "photos"}`}
-          </button>
-          <p className="mt-2 text-center text-[11px] text-slate-400">AI checks 5 DSAPT accessibility criteria</p>
-        </div>
-      </div>
-
-      {/* Bottom nav */}
-      <nav className="sticky bottom-0 grid grid-cols-4 border-t border-slate-200 bg-white py-3 text-center text-[11px]">
-        {NAV.map((n) => (
-          <div key={n.label} onClick={() => router.push(n.route)} className={`cursor-pointer font-medium ${n.route === "/m-scan" ? "text-emerald-700" : "text-slate-400"}`}>
-            {n.label}
+        {status && (
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950">
+            <div className="h-4 w-4 animate-spin rounded-full border-[2px] border-emerald-700 border-t-transparent" />
+            <p className="text-sm text-emerald-700 dark:text-emerald-400">{status}</p>
           </div>
-        ))}
-      </nav>
-    </main>
+        )}
+
+        <button
+          type="button"
+          onClick={analyse}
+          disabled={loading || files.length === 0}
+          className={`w-full rounded-2xl py-4 text-base font-bold text-white ${
+            loading || files.length === 0
+              ? "cursor-not-allowed bg-emerald-300 dark:bg-emerald-900"
+              : "bg-emerald-700 shadow-md active:bg-emerald-800"
+          }`}
+        >
+          {loading
+            ? "Analysing…"
+            : files.length > 0
+              ? `Generate report from ${files.length} photo${files.length > 1 ? "s" : ""}`
+              : "Add photos to generate report"}
+        </button>
+
+        <p className="text-center text-xs text-slate-400 dark:text-slate-500">
+          AI checks against DSAPT accessibility criteria
+        </p>
+      </main>
+
+      <BottomNav items={NAV} active="/m-scan" />
+    </div>
+  );
+}
+
+export default function ScanPage() {
+  return (
+    <ThemeProvider>
+      <Suspense>
+        <ScanContent />
+      </Suspense>
+    </ThemeProvider>
   );
 }
