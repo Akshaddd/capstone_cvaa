@@ -1,8 +1,5 @@
 "use client";
 
-// This component is only ever imported via next/dynamic with ssr:false
-// so it is safe to use window, L, and react-leaflet directly here.
-
 import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
@@ -54,7 +51,6 @@ export default function LeafletMap({
 }) {
   const center: LatLngExpression = [-37.813, 144.963];
 
-  // Limit to first 400 stops for performance on mobile
   const displayStops = useMemo(() => stops.slice(0, 400), [stops]);
 
   return (
@@ -62,12 +58,10 @@ export default function LeafletMap({
       center={center}
       zoom={12}
       style={{ height: "100%", width: "100%" }}
-      // Mobile-friendly: single finger pan, pinch zoom
-      tap={false}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution='copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         maxZoom={19}
       />
       <FlyTo stop={selectedStop} />
