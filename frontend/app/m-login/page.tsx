@@ -2,51 +2,41 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ThemeProvider, ThemeToggle } from "../shared";
-
-const ROLE_ROUTES: Record<string, string> = {
-  "user@myaccess.com":    "/m-home",
-  "ptv@myaccess.com":     "/m-ptv",
-  "council@myaccess.com": "/m-council",
-};
-
-const QUICK_LOGINS = [
-  { label: "User",    email: "user@myaccess.com"    },
-  { label: "PTV",     email: "ptv@myaccess.com"     },
-  { label: "Council", email: "council@myaccess.com" },
-];
+import { ThemeProvider } from "../shared";
 
 function LoginContent() {
-  const [email, setEmail] = useState("user@myaccess.com");
-  const [password, setPassword] = useState("password");
-  const [error, setError] = useState<string | null>(null);
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [error,    setError]    = useState<string | null>(null);
 
   function handleSignIn() {
-    const route = ROLE_ROUTES[email.trim().toLowerCase()];
-    if (!route) {
-      setError("Unknown email. Try user@myaccess.com, ptv@myaccess.com, or council@myaccess.com");
-      return;
-    }
-    window.location.href = route;
+    if (!email.trim()) { setError("Please enter your email."); return; }
+    if (!password)     { setError("Please enter your password."); return; }
+    
+    window.location.href = "/m-home";
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-5 dark:bg-slate-950">
+    <div style={{
+      minHeight: "100dvh", display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      background: "#f8fafc", padding: 20,
+    }}>
 
-      <div className="absolute left-5 top-5">
-        <Link href="/m-landing" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          ← Back
-        </Link>
-      </div>
-      <div className="absolute right-5 top-5">
-        <ThemeToggle />
-      </div>
+      <div style={{
+        width: "100%", maxWidth: 360,
+        background: "white", borderRadius: 24,
+        border: "1px solid #e2e8f0", boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+        overflow: "hidden",
+      }}>
 
-      <div className="w-full max-w-sm overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
-
-        {/* Logo */}
-        <div className="flex flex-col items-center px-8 pt-12 pb-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-700 shadow-md">
+        {/* Logo block */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "48px 32px 24px", textAlign: "center" }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 18,
+            background: "#047857", display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 12px rgba(4,120,87,0.25)",
+          }}>
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
               <rect x="2" y="8" width="18" height="12" rx="2.5" fill="white" />
               <rect x="5" y="11" width="4" height="3" rx="0.8" fill="#047857" />
@@ -58,79 +48,76 @@ function LoginContent() {
               <circle cx="23" cy="7" r="2" fill="#047857" />
             </svg>
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">MyAccess</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Melbourne accessibility network</p>
+          <h1 style={{ margin: "16px 0 4px", fontSize: 24, fontWeight: 700, color: "#0f172a" }}>MyAccess</h1>
+          <p style={{ margin: 0, fontSize: 13, color: "#64748b" }}>Melbourne accessibility network</p>
         </div>
 
         {/* Form */}
-        <div className="flex flex-col gap-4 px-8 pb-10">
+        <div style={{ padding: "0 32px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
+
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <label style={{ display: "block", marginBottom: 6, fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(null); }}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              placeholder="you@example.com"
               autoCapitalize="none"
               autoCorrect="off"
+              style={{
+                width: "100%", boxSizing: "border-box",
+                border: "1px solid #e2e8f0", borderRadius: 12,
+                background: "#f8fafc", padding: "12px 16px",
+                fontSize: 14, color: "#0f172a", outline: "none",
+              }}
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <label style={{ display: "block", marginBottom: 6, fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Password
             </label>
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-600 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              onChange={(e) => { setPassword(e.target.value); setError(null); }}
+              placeholder="Password"
+              style={{
+                width: "100%", boxSizing: "border-box",
+                border: "1px solid #e2e8f0", borderRadius: 12,
+                background: "#f8fafc", padding: "12px 16px",
+                fontSize: 14, color: "#0f172a", outline: "none",
+              }}
             />
           </div>
 
           {error && (
-            <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-400">
+            <p style={{ margin: 0, fontSize: 13, color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px" }}>
               {error}
             </p>
           )}
 
           <button
             onClick={handleSignIn}
-            className="block w-full rounded-xl bg-emerald-700 py-3.5 text-center text-sm font-bold text-white shadow-sm active:bg-emerald-800"
+            style={{
+              width: "100%", padding: "14px 0", borderRadius: 12,
+              background: "#047857", color: "white", fontWeight: 700,
+              fontSize: 15, border: "none", cursor: "pointer",
+              marginTop: 4,
+            }}
           >
             Sign in
           </button>
 
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-            <p className="text-xs text-slate-400">quick sign in as</p>
-            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {QUICK_LOGINS.map((q) => (
-              <button
-                key={q.label}
-                onClick={() => { setEmail(q.email); setError(null); }}
-                className={`rounded-xl border px-2 py-2 text-xs font-semibold transition-colors ${
-                  email === q.email
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-                    : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                }`}
-              >
-                {q.label}
-              </button>
-            ))}
-          </div>
-
-          <p className="text-center text-xs text-slate-400 dark:text-slate-500">
-            No account?{" "}
-            <Link href="/m-landing" className="font-semibold text-emerald-700 dark:text-emerald-500">
+          <p style={{ margin: 0, textAlign: "center", fontSize: 13, color: "#94a3b8" }}>
+            Don&apos;t have an account?{" "}
+            <Link href="/m-landing" style={{ color: "#047857", fontWeight: 600, textDecoration: "none" }}>
               Register
             </Link>
           </p>
+
         </div>
       </div>
     </div>
