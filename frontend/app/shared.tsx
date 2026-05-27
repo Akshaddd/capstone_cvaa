@@ -1,70 +1,59 @@
-/**
- * shared.tsx — Shared components used across all mobile pages
- *
- * ThemeProvider  — wraps the app, reads/writes dark mode preference
- * BottomNav      — 4-item nav bar with active state
- * PageShell      — header + scrollable body + bottom nav
- * ThemeToggle    — sun/moon button for dark/light mode
- */
-
 "use client";
 
-import Link from "next/link";
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-// ─── Theme context ────────────────────────────────────────────────────────────
-
-type Theme = "light" | "dark";
-
-const ThemeCtx = createContext<{
-  theme: Theme;
-  toggle: () => void;
-}>({ theme: "light", toggle: () => {} });
+// ── Theme hook ────────────────────────────────────────────────────────────────
 
 export function useTheme() {
-  return useContext(ThemeCtx);
+  // Initialize directly from the DOM — the blocking script in layout.tsx
+  // already set the correct class before paint, so this is always accurate
+  const [dark, setDark] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return document.documentElement.classList.contains("dark");
+  });
+
+  function toggle() {
+    const next = !dark;
+    setDark(next);
+    if (next) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }
+
+  return { dark, toggle };
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  return <>{children}</>;
+}
 
-  useEffect(() => {
-    // Read saved preference or system preference
-    const saved = localStorage.getItem("theme") as Theme | null;
-    const sys = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    const initial = saved ?? sys;
-    setTheme(initial);
-    document.documentElement.classList.toggle("dark", initial === "dark");
-  }, []);
+// ── ThemeToggle ───────────────────────────────────────────────────────────────
 
-  function toggle() {
-    setTheme((prev) => {
-      const next: Theme = prev === "light" ? "dark" : "light";
-      localStorage.setItem("theme", next);
-      document.documentElement.classList.toggle("dark", next === "dark");
-      return next;
-    });
+export function ThemeToggle() {
+  const { dark, toggle } = useTheme();
+
+  // Avoid hydration mismatch — render a placeholder until client mounts
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return (
+      <div className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800" />
+    );
   }
 
   return (
-    <ThemeCtx.Provider value={{ theme, toggle }}>
-      {children}
-    </ThemeCtx.Provider>
-  );
-}
-
-// ─── Theme toggle button ─────────────────────────────────────────────────────
-
-export function ThemeToggle() {
-  const { theme, toggle } = useTheme();
-  return (
     <button
       onClick={toggle}
-      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+      aria-label="Toggle theme"
+      className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center flex-shrink-0"
     >
-      {theme === "dark" ? (
-        // Sun icon
+      {dark ? (
+        // Sun icon — click to go light
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="5" />
           <line x1="12" y1="1" x2="12" y2="3" />
@@ -77,7 +66,7 @@ export function ThemeToggle() {
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
         </svg>
       ) : (
-        // Moon icon
+        // Moon icon — click to go dark
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>
@@ -86,38 +75,59 @@ export function ThemeToggle() {
   );
 }
 
-// ─── Bottom nav ───────────────────────────────────────────────────────────────
+// ── BottomNav ─────────────────────────────────────────────────────────────────
 
 export type NavItem = { label: string; href: string };
 
-export function BottomNav({
-  items,
-  active,
-}: {
-  items: NavItem[];
-  active: string;
-}) {
+export function BottomNav({ items, active }: { items: NavItem[]; active: string }) {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-20 grid border-t border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
-      style={{
-        gridTemplateColumns: `repeat(${items.length}, 1fr)`,
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}
+      className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {items.map((n) => (
-        <Link
-          key={n.label}
-          href={n.href}
-          className={`py-3 text-center text-[11px] font-semibold transition-colors ${
-            n.href === active
-              ? "text-emerald-700 dark:text-emerald-400"
-              : "text-slate-400 dark:text-slate-500"
-          }`}
-        >
-          {n.label}
-        </Link>
-      ))}
+      <div className="flex">
+        {items.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className={`flex-1 py-3 text-center text-xs font-semibold ${
+              item.href === active
+                ? "text-emerald-700 dark:text-emerald-400"
+                : "text-slate-400 dark:text-slate-500"
+            }`}
+          >
+            {item.label}
+          </a>
+        ))}
+      </div>
     </nav>
+  );
+}
+
+// ── StatusBadge ───────────────────────────────────────────────────────────────
+
+type Status = "mostly_accessible" | "partial_access" | "review_required";
+
+const STATUS_MAP: Record<Status, { label: string; className: string }> = {
+  mostly_accessible: {
+    label: "Accessible",
+    className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
+  },
+  partial_access: {
+    label: "Partial",
+    className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
+  },
+  review_required: {
+    label: "Review",
+    className: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+  },
+};
+
+export function StatusBadge({ status }: { status: Status }) {
+  const { label, className } = STATUS_MAP[status] ?? STATUS_MAP.review_required;
+  return (
+    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${className}`}>
+      {label}
+    </span>
   );
 }
