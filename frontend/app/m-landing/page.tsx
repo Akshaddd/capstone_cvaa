@@ -1,53 +1,81 @@
 "use client";
 
-import Link from "next/link";
-import { ThemeProvider, ThemeToggle } from "../shared";
+import { ThemeToggle } from "../shared";
 
-function LandingContent() {
+const HOW_IT_WORKS = [
+  { step: "1", title: "Find a stop",  desc: "Search or tap any stop on the live accessibility map" },
+  { step: "2", title: "Scan it",      desc: "Take photos with your phone — our AI does the rest" },
+  { step: "3", title: "Get a report", desc: "Instant DSAPT compliance report with clause-level findings" },
+];
+
+const STATS = [
+  { title: "1,000+ stops", sub: "Melbourne network mapped"  },
+  { title: "5 AI models",  sub: "Multi-model YOLO pipeline" },
+  { title: "DSAPT aligned",sub: "Clause-level compliance"   },
+  { title: "Free to use",  sub: "For everyone, always"      },
+];
+
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-dvh bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
 
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 pt-5 pb-4 dark:border-slate-800 dark:bg-slate-950">
+      {/* Header */}
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">MyAccess</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Melbourne accessibility network</p>
+          <h1 className="text-xl font-bold">MyAccess</h1>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Melbourne accessibility network</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Link href="/m-login" className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white">
+          <a
+            href="/m-login"
+            className="bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-xl"
+          >
             Sign in
-          </Link>
+          </a>
         </div>
       </header>
 
       <main className="flex flex-col gap-4 p-4 pb-10">
 
-        <div className="rounded-2xl bg-emerald-700 p-6 text-white">
-          <p className="text-sm font-semibold opacity-80">Accessibility audit tool</p>
-          <h2 className="mt-2 text-2xl font-bold leading-tight">DSAPT compliance auditing for Melbourne public transport</h2>
-          <p className="mt-2 text-sm opacity-75">Scan a stop, get a structured compliance report.</p>
-          <div className="mt-5 flex gap-3">
-            <Link href="/m-login" className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-700">
+        {/* Hero */}
+        <div className="bg-emerald-700 rounded-2xl p-6 text-white">
+          <p className="text-xs font-semibold opacity-80 uppercase tracking-wider mb-2">
+            Accessibility audit tool
+          </p>
+          <h2 className="text-2xl font-bold leading-snug mb-2">
+            DSAPT compliance auditing for Melbourne public transport
+          </h2>
+          <p className="text-sm opacity-75 mb-5">
+            Scan a stop, get a structured compliance report.
+          </p>
+          <div className="flex gap-3">
+            <a
+              href="/m-login"
+              className="bg-white text-emerald-700 font-bold text-sm px-5 py-3 rounded-xl"
+            >
               Get started
-            </Link>
-            <Link href="/m-map" className="rounded-xl border border-white/40 px-5 py-3 text-sm font-semibold text-white">
+            </a>
+            <a
+              href="/m-map"
+              className="border border-white/40 text-white font-semibold text-sm px-5 py-3 rounded-xl"
+            >
               View map
-            </Link>
+            </a>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
-          <h3 className="mb-4 text-base font-bold text-slate-900 dark:text-white">How it works</h3>
+        {/* How it works */}
+        <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
+          <h3 className="text-base font-bold mb-4">How it works</h3>
           <div className="flex flex-col gap-4">
-            {[
-              { step: "1", title: "Find a stop",   desc: "Search or tap any stop on the live accessibility map" },
-              { step: "2", title: "Scan it",        desc: "Take photos with your phone — our AI does the rest" },
-              { step: "3", title: "Get a report",   desc: "Instant DSAPT compliance report with clause-level findings" },
-            ].map((s) => (
-              <div key={s.step} className="flex gap-4">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white">{s.step}</div>
+            {HOW_IT_WORKS.map((s) => (
+              <div key={s.step} className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-full bg-emerald-700 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
+                  {s.step}
+                </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{s.title}</p>
+                  <p className="text-sm font-semibold">{s.title}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{s.desc}</p>
                 </div>
               </div>
@@ -55,40 +83,35 @@ function LandingContent() {
           </div>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
-          {[
-            { title: "1,000+ stops", sub: "Melbourne network mapped"   },
-            { title: "5 AI models",  sub: "Multi-model YOLO pipeline"  },
-            { title: "DSAPT aligned",sub: "Clause-level compliance"    },
-            { title: "Free to use",  sub: "For everyone, always"       },
-          ].map((f) => (
-            <div key={f.title} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">{f.title}</p>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{f.sub}</p>
+          {STATS.map((f) => (
+            <div
+              key={f.title}
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4"
+            >
+              <p className="text-sm font-bold">{f.title}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{f.sub}</p>
             </div>
           ))}
         </div>
 
-        <Link href="/m-login" className="block w-full rounded-2xl bg-emerald-700 py-4 text-center text-base font-bold text-white shadow-sm">
+        {/* CTA */}
+        <a
+          href="/m-login"
+          className="block w-full bg-emerald-700 text-white font-bold text-base text-center py-4 rounded-2xl"
+        >
           Sign in to start scanning
-        </Link>
+        </a>
 
-        <p className="text-center text-xs text-slate-400 dark:text-slate-600">
+        <p className="text-center text-xs text-slate-400 dark:text-slate-500">
           Or{" "}
-          <Link href="/m-map" className="font-semibold text-emerald-700 dark:text-emerald-500">
+          <a href="/m-map" className="text-emerald-700 dark:text-emerald-400 font-semibold">
             browse the map without signing in
-          </Link>
+          </a>
         </p>
 
       </main>
     </div>
-  );
-}
-
-export default function LandingPage() {
-  return (
-    <ThemeProvider>
-      <LandingContent />
-    </ThemeProvider>
   );
 }
