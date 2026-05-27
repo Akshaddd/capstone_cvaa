@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { ThemeProvider, ThemeToggle, BottomNav } from "../shared";
-import rawLocations from "../map/real-stops.json";
+import { ThemeToggle, BottomNav, StatusBadge } from "../shared";
+import rawStops from "../map/real-stops.json";
 
 type Stop = {
   id: string;
@@ -15,11 +14,15 @@ type Stop = {
   notes: string;
 };
 
-const ALL_STOPS = rawLocations as Stop[];
+const ALL_STOPS = rawStops as Stop[];
 
-const NEARBY_STOPS = ALL_STOPS.filter(
-  (s) => s.lat > -37.726 && s.lat < -37.700 && s.lng > 145.044 && s.lng < 145.062
-).slice(0, 3);
+const NEARBY = ALL_STOPS.filter(
+  (s) =>
+    s.lat > -37.726 &&
+    s.lat < -37.700 &&
+    s.lng > 145.044 &&
+    s.lng < 145.062
+).slice(0, 4);
 
 const NAV = [
   { label: "Home",    href: "/m-home"    },
@@ -28,132 +31,125 @@ const NAV = [
   { label: "Reports", href: "/m-reports" },
 ];
 
-function statusChip(s: Stop["status"]) {
-  if (s === "mostly_accessible") return { label: "Accessible", bg: "#d1fae5", text: "#047857" };
-  if (s === "partial_access")    return { label: "Partial",    bg: "#fef9c3", text: "#a16207" };
-  return                                { label: "Review",     bg: "#fee2e2", text: "#b91c1c" };
+function scanHref(s: Stop) {
+  return `/m-scan?id=${encodeURIComponent(s.id)}&name=${encodeURIComponent(s.name)}&mode=${encodeURIComponent(s.mode)}&status=${encodeURIComponent(s.status)}`;
 }
 
-function stopHref(stop: Stop) {
-  return `/m-scan?id=${encodeURIComponent(stop.id)}&name=${encodeURIComponent(stop.name)}&mode=${encodeURIComponent(stop.mode)}&status=${encodeURIComponent(stop.status)}`;
-}
-
-function HomeContent() {
-  const accessibleCount = NEARBY_STOPS.filter((s) => s.status === "mostly_accessible").length;
-  const score = NEARBY_STOPS.length > 0 ? Math.round((accessibleCount / NEARBY_STOPS.length) * 100) : 64;
+export default function HomePage() {
+  const audited = NEARBY.filter((s) => s.status !== "review_required").length;
+  const score   = NEARBY.length > 0 ? Math.round((audited / NEARBY.length) * 100) : 0;
+  const scoreLabel = audited === 0 ? "Audit required" : score < 50 ? "Needs attention" : "Mostly accessible";
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
 
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 pt-5 pb-4 dark:border-slate-800 dark:bg-slate-900">
+      {/* Header */}
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div>
-          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">Good morning</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Good morning</p>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">MyAccess</h1>
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">M</div>
+          <div className="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center text-xs font-bold text-white">
+            M
+          </div>
         </div>
       </header>
 
       <main className="flex flex-col gap-3 p-4 pb-24">
 
         {/* Score card */}
-        <div className="rounded-2xl bg-emerald-700 p-5 text-white">
-          <p className="text-xs font-semibold uppercase tracking-widest opacity-75">Accessibility Score Nearby</p>
-          <p className="mt-2 text-5xl font-extrabold">{score}%</p>
-          <p className="mt-1 text-sm opacity-70">{NEARBY_STOPS.length} stops near La Trobe</p>
+        <div className="bg-emerald-700 rounded-2xl p-5 text-white">
+          <p className="text-xs font-semibold uppercase tracking-widest opacity-75 mb-1">
+            Accessibility Score Nearby
+          </p>
+          <p className="text-5xl font-extrabold leading-none mb-1">{score}%</p>
+          <p className="text-sm opacity-70">{scoreLabel} · {NEARBY.length} stops nearby</p>
         </div>
 
         {/* Map preview */}
-        <Link
+        <a
           href="/m-map"
-          className="relative block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700"
-          style={{ height: 160 }}
+          className="relative block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 h-40"
         >
           <iframe
             src="https://www.openstreetmap.org/export/embed.html?bbox=145.044,-37.726,145.062,-37.700&layer=mapnik"
-            className="h-full w-full"
-            style={{ border: 0, pointerEvents: "none" }}
+            className="w-full h-full border-0 pointer-events-none"
             title="Map preview"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
           <div className="absolute bottom-3 left-0 right-0 flex justify-center">
-            <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+            <span className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-full px-4 py-1.5 shadow">
               View accessibility map
             </span>
           </div>
-        </Link>
+        </a>
 
         {/* Scan CTA */}
-        <Link
+        <a
           href="/m-scan"
-          className="flex items-center justify-between rounded-2xl bg-emerald-700 p-5 text-white shadow-sm"
+          className="flex items-center justify-between bg-emerald-700 rounded-2xl p-5 text-white"
         >
           <div>
             <p className="text-base font-bold">Scan a stop</p>
-            <p className="mt-0.5 text-sm opacity-75">Check DSAPT compliance with photos</p>
+            <p className="text-sm opacity-75 mt-0.5">Check DSAPT compliance with photos</p>
           </div>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="opacity-80">
+          <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24" className="opacity-80 flex-shrink-0">
             <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
             <circle cx="12" cy="13" r="4" />
           </svg>
-        </Link>
+        </a>
 
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: "Saved Stops",  sub: "Your favourites",   href: "/m-saved"   },
-            { label: "Past Reports", sub: "Previous audits",   href: "/m-reports" },
-          ].map((a) => (
-            <Link
-              key={a.label}
-              href={a.href}
-              className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900"
-            >
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{a.label}</p>
-              <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{a.sub}</p>
-            </Link>
-          ))}
+          <a
+            href="/m-saved"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 block"
+          >
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Saved Stops</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Your favourites</p>
+          </a>
+          <a
+            href="/m-reports"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 block"
+          >
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Past Reports</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Previous audits</p>
+          </a>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-          <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+        {/* Nearby stops */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
             Nearby stops
           </p>
-          {NEARBY_STOPS.length > 0 ? NEARBY_STOPS.map((s) => {
-            const chip = statusChip(s.status);
-            return (
-              <Link
-                key={s.id}
-                href={stopHref(s)}
-                className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0 dark:border-slate-800"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{s.name}</p>
-                  <p className="text-xs capitalize text-slate-400 dark:text-slate-500">{s.mode}</p>
-                </div>
-                <span style={{ background: chip.bg, color: chip.text }} className="ml-3 shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold">
-                  {chip.label}
-                </span>
-              </Link>
-            );
-          }) : (
-            <p className="text-sm text-slate-400">No stops found nearby.</p>
-          )}
+          {NEARBY.map((s, i) => (
+            <a
+              key={s.id}
+              href={scanHref(s)}
+              className={`flex items-center justify-between py-3 ${
+                i < NEARBY.length - 1
+                  ? "border-b border-slate-100 dark:border-slate-800"
+                  : ""
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                  {s.name}
+                </p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 capitalize mt-0.5">
+                  {s.mode}
+                </p>
+              </div>
+              <StatusBadge status={s.status} />
+            </a>
+          ))}
         </div>
 
       </main>
 
       <BottomNav items={NAV} active="/m-home" />
     </div>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <ThemeProvider>
-      <HomeContent />
-    </ThemeProvider>
   );
 }
