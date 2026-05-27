@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import "leaflet/dist/leaflet.css";
+import { useEffect, useRef, useMemo } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
-import type { LatLngExpression } from "leaflet";
 
 type Stop = {
   id: string;
@@ -15,93 +15,97 @@ type Stop = {
   notes: string;
 };
 
-function statusColor(s: Stop["status"]) {
-  if (s === "mostly_accessible") return "#16a34a";
-  if (s === "partial_access")    return "#d97706";
-  return "#dc2626";
-}
+const STATUS_COLOR: Record<Stop["status"], string> = {
+  mostly_accessible: "#16a34a",
+  partial_access:    "#d97706",
+  review_required:   "#dc2626",
+};
 
-function statusLabel(s: Stop["status"]) {
-  if (s === "mostly_accessible") return "Accessible";
-  if (s === "partial_access")    return "Partial";
-  return "Review";
-}
+const STATUS_LABEL: Record<Stop["status"], string> = {
+  mostly_accessible: "Accessible",
+  partial_access:    "Partial",
+  review_required:   "Review",
+};
 
-// Sub-component: fly to the selected stop
 function FlyTo({ stop }: { stop: Stop | null }) {
-  const map = useMap();
+  const map   = useMap();
   const prevId = useRef<string | null>(null);
+
   useEffect(() => {
     if (stop && stop.id !== prevId.current) {
-      map.flyTo([stop.lat, stop.lng], 16, { animate: true, duration: 0.8 });
+      map.flyTo([stop.lat, stop.lng], 16, { animate: true, duration: 0.7 });
       prevId.current = stop.id;
     }
   }, [stop, map]);
+
   return null;
 }
 
 export default function LeafletMap({
   stops,
-  onSelectStop,
   selectedStop,
+  onSelectStop,
 }: {
   stops: Stop[];
-  onSelectStop: (stop: Stop) => void;
   selectedStop: Stop | null;
+  onSelectStop: (stop: Stop) => void;
 }) {
-  const center: LatLngExpression = [-37.813, 144.963];
-
-  const displayStops = useMemo(() => stops.slice(0, 400), [stops]);
+  // Cap at 300 markers for mobile performance
+  const visible = useMemo(() => stops.slice(0, 300), [stops]);
 
   return (
     <MapContainer
-      center={center}
-      zoom={12}
+      center={[-37.72, 145.05]}
+      zoom={13}
       style={{ height: "100%", width: "100%" }}
+      scrollWheelZoom
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution='&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'
         maxZoom={19}
       />
       <FlyTo stop={selectedStop} />
-      {displayStops.map((stop) => (
+
+      {visible.map((stop) => (
         <CircleMarker
           key={stop.id}
           center={[stop.lat, stop.lng]}
-          radius={selectedStop?.id === stop.id ? 10 : 6}
+          radius={selectedStop?.id === stop.id ? 10 : 7}
           pathOptions={{
             color: "#fff",
-            weight: selectedStop?.id === stop.id ? 2 : 1,
-            fillColor: statusColor(stop.status),
+            weight: 1.5,
+            fillColor: STATUS_COLOR[stop.status],
             fillOpacity: 0.9,
           }}
-          eventHandlers={{
-            click: () => onSelectStop(stop),
-          }}
+          eventHandlers={{ click: () => onSelectStop(stop) }}
         >
           <Popup>
-            <div style={{ minWidth: 160, fontFamily: "sans-serif" }}>
+            <div style={{ minWidth: 160, fontFamily: "system-ui, sans-serif" }}>
               <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 2px" }}>{stop.name}</p>
-              <p style={{ fontSize: 11, color: "#64748b", margin: "0 0 6px", textTransform: "capitalize" }}>
+              <p style={{ fontSize: 11, color: "#64748b", margin: "0 0 8px", textTransform: "capitalize" }}>
                 {stop.mode} stop
               </p>
-              <span style={{
-                fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 99,
+              <p style={{
+                display: "inline-block",
+                fontSize: 10, fontWeight: 700,
+                padding: "3px 10px", borderRadius: 99,
                 background: stop.status === "mostly_accessible" ? "#d1fae5" : stop.status === "partial_access" ? "#fef9c3" : "#fee2e2",
                 color: stop.status === "mostly_accessible" ? "#047857" : stop.status === "partial_access" ? "#a16207" : "#b91c1c",
+                marginBottom: 8,
               }}>
-                {statusLabel(stop.status)}
-              </span>
+                {STATUS_LABEL[stop.status]}
+              </p>
               <button
                 onClick={() => onSelectStop(stop)}
                 style={{
-                  marginTop: 8, display: "block", width: "100%", padding: "8px 0",
-                  background: "#047857", color: "white", border: "none", borderRadius: 10,
-                  fontWeight: 700, fontSize: 12, cursor: "pointer",
+                  display: "block", width: "100%",
+                  padding: "9px 0", borderRadius: 8,
+                  background: "#047857", color: "white",
+                  border: "none", fontWeight: 700, fontSize: 12, cursor: "pointer",
                 }}
               >
-                Scan this stop
+                Select this stop
               </button>
             </div>
           </Popup>

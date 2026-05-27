@@ -2,21 +2,8 @@
 
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { ThemeProvider, ThemeToggle, BottomNav } from "../shared";
-import rawLocations from "../map/real-stops.json";
-
-// Dynamic import — Leaflet uses window so must be client-only, no SSR
-const LeafletMap = dynamic(() => import("./LeafletMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-slate-100">
-      <div className="text-center">
-        <div className="mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-[3px] border-emerald-700 border-t-transparent" />
-        <p className="text-xs text-slate-500">Loading map…</p>
-      </div>
-    </div>
-  ),
-});
+import { ThemeToggle, BottomNav, StatusBadge } from "../shared";
+import rawStops from "../map/real-stops.json";
 
 type Stop = {
   id: string;
@@ -29,7 +16,19 @@ type Stop = {
   notes: string;
 };
 
-const ALL_STOPS = rawLocations as Stop[];
+const ALL_STOPS = rawStops as Stop[];
+
+const LeafletMap = dynamic(() => import("./LeafletMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+      <div className="text-center">
+        <div className="w-7 h-7 border-[3px] border-emerald-700 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <p className="text-xs text-slate-400 dark:text-slate-500">Loading map...</p>
+      </div>
+    </div>
+  ),
+});
 
 const FILTERS = [
   { key: "all",               label: "All"        },
@@ -41,80 +40,65 @@ const FILTERS = [
 ];
 
 const NAV = [
-  { label: "Home",    href: "/m-home"   },
-  { label: "Scan",    href: "/m-scan"   },
-  { label: "Map",     href: "/m-map"    },
-  { label: "Reports", href: "/m-report" },
+  { label: "Home",    href: "/m-home"    },
+  { label: "Scan",    href: "/m-scan"    },
+  { label: "Map",     href: "/m-map"     },
+  { label: "Reports", href: "/m-reports" },
 ];
 
-function statusLabel(s: Stop["status"]) {
-  if (s === "mostly_accessible") return "Accessible";
-  if (s === "partial_access")    return "Partial";
-  return "Review";
-}
-
-function statusColors(s: Stop["status"]) {
-  if (s === "mostly_accessible") return { dot: "#16a34a", bg: "#d1fae5", text: "#047857" };
-  if (s === "partial_access")    return { dot: "#d97706", bg: "#fef9c3", text: "#a16207" };
-  return                                { dot: "#dc2626", bg: "#fee2e2", text: "#b91c1c" };
-}
-
-type ViewMode = "map" | "list";
-
-function MapContent() {
-  const [filter, setFilter] = useState("all");
+export default function MapPage() {
+  const [filter,   setFilter]   = useState("all");
   const [selected, setSelected] = useState<Stop | null>(null);
-  const [view, setView] = useState<ViewMode>("map");
+  const [view,     setView]     = useState<"map" | "list">("map");
 
   const filtered = useMemo(() => {
     if (filter === "all") return ALL_STOPS;
-    if (filter === "tram" || filter === "bus") return ALL_STOPS.filter((s) => s.mode === filter);
+    if (filter === "tram" || filter === "bus")
+      return ALL_STOPS.filter((s) => s.mode === filter);
     return ALL_STOPS.filter((s) => s.status === filter);
   }, [filter]);
 
-  function scanStop(stop: Stop) {
-    sessionStorage.setItem("selectedStop", JSON.stringify({
-      id: stop.id, name: stop.name, mode: stop.mode, status: stop.status,
-    }));
-    window.location.href = `/m-scan?id=${encodeURIComponent(stop.id)}&name=${encodeURIComponent(stop.name)}&mode=${encodeURIComponent(stop.mode)}&status=${encodeURIComponent(stop.status)}`;
+  function selectStop(stop: Stop) {
+    setSelected(stop);
+    setView("map");
   }
 
-  function handleSelectStop(stop: Stop) {
-    setSelected(stop);
-    setView("map"); // always show map when a marker is tapped
+  function scanStop(stop: Stop) {
+    const url = `/m-scan?id=${encodeURIComponent(stop.id)}&name=${encodeURIComponent(stop.name)}&mode=${encodeURIComponent(stop.mode)}&status=${encodeURIComponent(stop.status)}`;
+    window.location.href = url;
   }
 
   return (
-    <div className="flex h-screen flex-col bg-white dark:bg-slate-900" style={{ overflow: "hidden" }}>
+    <div className="flex flex-col bg-white dark:bg-slate-900" style={{ height: "100dvh", overflow: "hidden" }}>
 
       {/* Header */}
-      <header className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Accessibility Map</h1>
-            <p className="text-xs text-slate-400">{filtered.length} stops · tap marker or row to select</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <a href="/m-home" className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-300">
-              ← Back
-            </a>
-          </div>
+      <header className="flex-shrink-0 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Accessibility Map</h1>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{filtered.length} stops</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <a
+            href="/m-home"
+            className="text-xs font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2"
+          >
+            ← Back
+          </a>
         </div>
       </header>
 
       {/* Filter pills */}
-      <div className="shrink-0 overflow-x-auto border-b border-slate-100 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex-shrink-0 overflow-x-auto bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 py-2.5">
         <div className="flex gap-2" style={{ width: "max-content" }}>
           {FILTERS.map((f) => (
             <button
               key={f.key}
-              type="button"
               onClick={() => setFilter(f.key)}
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+              className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold ${
                 filter === f.key
                   ? "bg-emerald-700 text-white"
-                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
               }`}
             >
               {f.label}
@@ -124,137 +108,132 @@ function MapContent() {
       </div>
 
       {/* Map / List toggle */}
-      <div className="shrink-0 flex border-b border-slate-100 dark:border-slate-800">
-        {(["map", "list"] as ViewMode[]).map((v) => (
+      <div className="flex-shrink-0 flex border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+        {(["map", "list"] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`flex-1 py-2.5 text-xs font-semibold capitalize transition-colors ${
+            className={`flex-1 py-2.5 text-xs font-semibold capitalize border-b-2 transition-colors ${
               view === v
-                ? "border-b-2 border-emerald-700 text-emerald-700 dark:text-emerald-400"
-                : "text-slate-400 dark:text-slate-500"
+                ? "border-emerald-700 text-emerald-700 dark:text-emerald-400 dark:border-emerald-400"
+                : "border-transparent text-slate-400 dark:text-slate-500"
             }`}
           >
-            {v === "map" ? "🗺 Map" : "📋 List"}
+            {v}
           </button>
         ))}
       </div>
 
-      {/* Map */}
+      {/* Map view */}
       {view === "map" && (
-        <div className="relative shrink-0" style={{ flex: "0 0 55%", minHeight: 220 }}>
-          <LeafletMap
-            stops={filtered}
-            selectedStop={selected}
-            onSelectStop={handleSelectStop}
-          />
-          {/* Legend */}
-          <div className="pointer-events-none absolute bottom-3 left-3 z-20 rounded-xl bg-white/95 p-2.5 shadow dark:bg-slate-800/95">
-            {[
-              { color: "#16a34a", label: "Accessible" },
-              { color: "#d97706", label: "Partial"    },
-              { color: "#dc2626", label: "Review"     },
-            ].map((item) => (
-              <div key={item.label} className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold text-slate-700 last:mb-0 dark:text-slate-300">
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: item.color }} />
-                {item.label}
+        <>
+          {/* Map */}
+          <div className="relative flex-shrink-0" style={{ height: "50%" }}>
+            <LeafletMap
+              stops={filtered}
+              selectedStop={selected}
+              onSelectStop={selectStop}
+            />
+            {/* Legend */}
+            <div className="absolute bottom-3 left-3 z-20 bg-white/95 dark:bg-slate-900/95 rounded-xl p-2.5 shadow pointer-events-none">
+              {[
+                { color: "#16a34a", label: "Accessible" },
+                { color: "#d97706", label: "Partial"    },
+                { color: "#dc2626", label: "Review"     },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300 mb-1 last:mb-0">
+                  <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Selected stop card */}
+          {selected ? (
+            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 px-4 py-3">
+              <div className="flex items-start justify-between gap-2 mb-2.5">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{selected.name}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 capitalize mt-0.5">{selected.mode} stop</p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <StatusBadge status={selected.status} />
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="text-xl text-slate-400 dark:text-slate-500 leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Selected stop card (map mode) */}
-      {view === "map" && selected && (
-        <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{selected.name}</p>
-              <p className="text-xs capitalize text-slate-400 dark:text-slate-500">{selected.mode} stop</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span style={{
-                fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 99,
-                background: statusColors(selected.status).bg,
-                color: statusColors(selected.status).text,
-              }}>
-                {statusLabel(selected.status)}
-              </span>
               <button
-                onClick={() => setSelected(null)}
-                className="text-xl leading-none text-slate-400 dark:text-slate-500"
-              >×</button>
+                onClick={() => scanStop(selected)}
+                className="w-full bg-emerald-700 text-white font-bold text-sm rounded-xl py-3"
+              >
+                Scan this stop
+              </button>
             </div>
+          ) : (
+            <div className="flex-shrink-0 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 px-4 py-2.5">
+              <p className="text-xs text-slate-400 dark:text-slate-500 text-center">Tap a marker to select a stop</p>
+            </div>
+          )}
+
+          {/* Mini list */}
+          <div className="flex-1 overflow-y-auto min-h-0 bg-slate-50 dark:bg-slate-950">
+            {filtered.slice(0, 100).map((stop) => (
+              <button
+                key={stop.id}
+                onClick={() => selectStop(stop)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-100 dark:border-slate-800 ${
+                  selected?.id === stop.id
+                    ? "bg-emerald-50 dark:bg-emerald-950 border-l-[3px] border-l-emerald-700"
+                    : "bg-white dark:bg-slate-900"
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{
+                  background: stop.status === "mostly_accessible" ? "#16a34a" : stop.status === "partial_access" ? "#d97706" : "#dc2626"
+                }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{stop.name}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 capitalize">{stop.mode}</p>
+                </div>
+                <StatusBadge status={stop.status} />
+              </button>
+            ))}
+            <div className="h-16" />
           </div>
-          <button
-            onClick={() => scanStop(selected)}
-            className="mt-2.5 w-full rounded-xl bg-emerald-700 py-3 text-sm font-bold text-white active:bg-emerald-800"
-          >
-            Scan this stop
-          </button>
-        </div>
+        </>
       )}
 
-      {/* Stop list (list mode or below map) */}
-      <div
-        className="overflow-y-auto bg-slate-50 dark:bg-slate-950"
-        style={{ flex: 1, minHeight: 0 }}
-      >
-        {view === "list" && (
-          <p className="px-4 pb-1 pt-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+      {/* List view */}
+      {view === "list" && (
+        <div className="flex-1 overflow-y-auto min-h-0 bg-slate-50 dark:bg-slate-950">
+          <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
             {filtered.length} stops
           </p>
-        )}
-        {view === "map" && (
-          <p className="px-4 pb-1 pt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-            Tap a stop
-          </p>
-        )}
-        {filtered.slice(0, 200).map((stop) => {
-          const c = statusColors(stop.status);
-          const isSelected = selected?.id === stop.id;
-          return (
+          {filtered.map((stop) => (
             <button
               key={stop.id}
-              onClick={() => { handleSelectStop(stop); }}
-              className="flex w-full items-center gap-3 border-b border-slate-100 bg-white px-4 py-4 text-left dark:border-slate-800 dark:bg-slate-900"
-              style={{
-                borderLeft: isSelected ? "3px solid #047857" : "3px solid transparent",
-                background: isSelected ? "#f0fdf4" : undefined,
-              }}
+              onClick={() => { setSelected(stop); setView("map"); }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800"
             >
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.dot, flexShrink: 0 }} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{stop.name}</p>
-                <p className="mt-0.5 text-xs capitalize text-slate-400 dark:text-slate-500">{stop.mode}</p>
+              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{
+                background: stop.status === "mostly_accessible" ? "#16a34a" : stop.status === "partial_access" ? "#d97706" : "#dc2626"
+              }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{stop.name}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 capitalize">{stop.mode}</p>
               </div>
-              <span style={{
-                fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 99,
-                background: c.bg, color: c.text, flexShrink: 0,
-              }}>
-                {statusLabel(stop.status)}
-              </span>
+              <StatusBadge status={stop.status} />
             </button>
-          );
-        })}
-        {filtered.length > 200 && (
-          <p className="px-4 py-4 text-center text-xs text-slate-400 dark:text-slate-500">
-            Showing 200 of {filtered.length} stops — apply a filter to narrow down
-          </p>
-        )}
-        {/* Bottom nav spacer */}
-        <div style={{ height: 56 }} />
-      </div>
+          ))}
+          <div className="h-16" />
+        </div>
+      )}
 
       <BottomNav items={NAV} active="/m-map" />
     </div>
-  );
-}
-
-export default function MapPage() {
-  return (
-    <ThemeProvider>
-      <MapContent />
-    </ThemeProvider>
   );
 }
