@@ -3,9 +3,6 @@
 import { useEffect, useState } from "react";
 import { Sidebar, PageHeader, USER_NAV } from "../shared-desktop";
 
-const STOP_STATUS_OVERRIDES_KEY = "myaccess_stop_status_overrides";
-type StopStatus = "mostly_accessible" | "partial_access" | "review_required";
-
 type Severity = "critical" | "moderate" | "minor";
 
 function severityLabel(s: Severity) {
@@ -200,52 +197,11 @@ function getProfile(dets: Detection[]) {
   const hasGap     = passing.has("gap") || review.has("gap") || !failing.has("gap");
   const hasPath    = passing.has("person") || review.has("person") || !failing.has("person");
   return [
-    { label: "Wheelchair users",   suitable: hasStepFreeAccess && hasGap && hasPath,  reason: hasStepFreeAccess && hasGap && hasPath ? "Step-free boarding indicators, vehicle access, and path of travel appear supported." : !hasStepFreeAccess ? "Step-free boarding access could not be confirmed from this evidence." : "Boarding gap or path of travel requires review." },
-    { label: "Vision impairment",  suitable: hasTactile && hasSignage,       reason: hasTactile && hasSignage ? "Tactile ground indicators and passenger information appear supported." : !hasTactile ? "Tactile ground surface could not be confirmed." : "Passenger information signage requires closer review." },
-    { label: "Mobility aids",      suitable: hasStepFreeAccess && hasPath,   reason: hasStepFreeAccess && hasPath ? "Step-free access and clear path indicators appear supported." : "Clear path or step-free access requires review." },
-    { label: "General public",     suitable: hasPath,                        reason: hasPath ? "Clear path of travel appears supported in the uploaded evidence." : "Some access indicators require review before this stop is marked as low risk." },
+    { label: "Wheelchair users",   suitable: hasRamp && hasGap && hasPath,  reason: hasRamp && hasGap && hasPath ? "Ramp and accessible path detected." : !hasRamp ? "No kerb ramp detected — wheelchair users may not be able to board safely." : "Path or gap issues may affect wheelchair access." },
+    { label: "Vision impairment",  suitable: hasTactile && hasSignage,       reason: hasTactile && hasSignage ? "Tactile ground indicators and accessible signage detected." : !hasTactile ? "No tactile ground surface detected — navigation may be difficult for people with low vision." : "Signage may not meet requirements." },
+    { label: "Mobility aids",      suitable: hasRamp && hasPath,             reason: hasRamp && hasPath ? "Ramp and clear path detected." : "Ramp or clear path not detected — may present challenges for people using walkers or crutches." },
+    { label: "General public",     suitable: hasSignage && hasPath,          reason: hasSignage && hasPath ? "Stop appears generally usable." : "Some access issues detected that may affect all passengers." },
   ];
-}
-
-function getReportMapStatus(result: ScanResult | null): StopStatus {
-  const raws = result?.detections?.length ? result.detections : FALLBACK;
-
-  const deduped = Object.values(
-    raws.reduce<Record<string, Detection>>((acc, d) => {
-      const normalized = normalizeClassName(d.class);
-      if (!DSAPT[normalized]) return acc;
-      const normalizedDetection = { ...d, class: normalized };
-      if (!acc[normalized] || d.confidence > acc[normalized].confidence) acc[normalized] = normalizedDetection;
-      return acc;
-    }, {})
-  );
-
-  const warnings = deduped.filter((d) => getStatus(d.confidence, d.class) === "Review").length;
-  const failed = deduped.filter((d) => getStatus(d.confidence, d.class) === "Not detected").length;
-
-  if (failed > 0) return "review_required";
-  if (warnings > 0) return "partial_access";
-  return "mostly_accessible";
-}
-
-function saveStopStatusFromReport(result: ScanResult | null) {
-  const stopId = result?.selectedStop?.id;
-  if (!stopId || typeof window === "undefined") return;
-
-  const nextStatus = getReportMapStatus(result);
-
-  try {
-    const current = JSON.parse(window.localStorage.getItem(STOP_STATUS_OVERRIDES_KEY) || "{}");
-    window.localStorage.setItem(
-      STOP_STATUS_OVERRIDES_KEY,
-      JSON.stringify({
-        ...current,
-        [stopId]: nextStatus,
-      })
-    );
-  } catch {
-    window.localStorage.setItem(STOP_STATUS_OVERRIDES_KEY, JSON.stringify({ [stopId]: nextStatus }));
-  }
 }
 
 function FindingRow({ detection }: { detection: Detection }) {
@@ -256,8 +212,7 @@ function FindingRow({ detection }: { detection: Detection }) {
 
   return (
     <div className={`rounded-xl border overflow-hidden ${rowBg(status)}`}>
-      <button onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-4 px-4 py-3.5 text-left bg-transparent">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-4 px-4 py-3.5 text-left bg-transparent">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">{entry.name}</span>
           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase flex-shrink-0 ${sevChip(entry.severity, status)}`}>{severityLabel(entry.severity)}</span>
@@ -275,17 +230,15 @@ function FindingRow({ detection }: { detection: Detection }) {
 
       {open && (
         <div className="border-t border-black/5 dark:border-white/5 px-4 py-4 flex flex-col gap-4">
-
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">What this means</p>
             <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{entry.plainEnglish}</p>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Assessment finding</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Finding</p>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                {status === "Detected" ? entry.passNote : entry.failNote}
+                {status === "Pass" ? entry.passNote : entry.failNote}
               </p>
             </div>
             <div>
@@ -294,13 +247,12 @@ function FindingRow({ detection }: { detection: Detection }) {
             </div>
           </div>
 
-          {status !== "Detected" && (
+          {status !== "Pass" && (
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">Recommended review action</p>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{entry.action}</p>
             </div>
           )}
-
           <div>
             <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 mb-1">
               <span>Detection confidence</span><span>{pct}%</span>
@@ -390,8 +342,9 @@ export default function DesktopReportPage() {
           subtitle={`${stopMode} stop · ${reportId} · ${assessmentMode}`}
           actions={
             <div className="flex gap-2">
-              <a href="/d-ptv" className="text-sm font-semibold bg-emerald-700 text-white px-4 py-2 rounded-xl hover:bg-emerald-800">Submit for operator review</a>
-              <a href="/d-scan" className="text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Start new assessment</a>
+              {isDemo && <span className="text-xs font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-2.5 py-1">Demo</span>}
+              <a href="/d-ptv" className="text-sm font-semibold bg-emerald-700 text-white px-4 py-2 rounded-xl hover:bg-emerald-800">Submit to PTV</a>
+              <a href="/d-scan" className="text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Scan another</a>
             </div>
           }
         />
