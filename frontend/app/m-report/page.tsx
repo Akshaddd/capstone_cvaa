@@ -66,9 +66,6 @@ function getStatus(confidence: number) {
   return "Failed";
 }
 
-// ── Accessibility profile ─────────────────────────────────────────────────────
-// Given a set of detections, work out which user groups can use this stop
-
 interface UserGroup {
   icon: string;
   label: string;
@@ -140,8 +137,6 @@ function getAccessibilityProfile(detections: Detection[]): UserGroup[] {
     },
   ];
 }
-
-// ── Sub-components ────────────────────────────────────────────────────────────
 
 function AccessibilityProfile({ detections }: { detections: Detection[] }) {
   const groups = getAccessibilityProfile(detections);
@@ -280,8 +275,6 @@ function FindingRow({ detection }: { detection: Detection }) {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export default function ReportPage() {
   const [scan,    setScan]    = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -307,7 +300,6 @@ export default function ReportPage() {
 
   const rawDetections = scan?.detections?.length ? scan.detections : FALLBACK_DETECTIONS;
 
-  // Deduplicate — keep highest confidence per class
   const deduped = Object.values(
     rawDetections.reduce<Record<string, Detection>>((acc, d) => {
       if (!acc[d.class] || d.confidence > acc[d.class].confidence) acc[d.class] = d;
@@ -346,7 +338,6 @@ export default function ReportPage() {
   return (
     <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
 
-      {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div>
           <p className="text-xs font-bold text-slate-900 dark:text-white">{reportId}</p>
@@ -371,7 +362,6 @@ export default function ReportPage() {
 
       <main className="flex flex-col gap-3 p-4 pb-24">
 
-        {/* Score card */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full border-[3px] border-emerald-700 flex items-center justify-center flex-shrink-0">
@@ -406,7 +396,6 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* Summary */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
             Summary
@@ -414,10 +403,8 @@ export default function ReportPage() {
           <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{summary}</p>
         </div>
 
-        {/* Accessibility profile — who can use this stop */}
         <AccessibilityProfile detections={deduped} />
 
-        {/* DSAPT Findings */}
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
             DSAPT Findings — tap to expand
@@ -429,7 +416,6 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {/* Disclaimer */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
           <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-500">
             Assessed against the{" "}
