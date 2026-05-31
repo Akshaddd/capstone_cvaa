@@ -50,7 +50,6 @@ export default function LeafletMap({
   selectedStop: Stop | null;
   onSelectStop: (stop: Stop) => void;
 }) {
-  // Cap at 300 markers for mobile performance
   const visible = useMemo(() => stops.slice(0, 300), [stops]);
 
   return (

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { ThemeToggle, BottomNav, StatusBadge } from "../shared";
-import rawStops from "../map/real-stops.json";
+import rawStops from "../data/stops.json";
 
 type Stop = {
   id: string;
@@ -71,7 +71,6 @@ export default function MapPage() {
   return (
     <div className="flex flex-col bg-white dark:bg-slate-900" style={{ height: "100dvh", overflow: "hidden" }}>
 
-      {/* Header */}
       <header className="flex-shrink-0 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">Accessibility Map</h1>
@@ -88,7 +87,6 @@ export default function MapPage() {
         </div>
       </header>
 
-      {/* Filter pills */}
       <div className="flex-shrink-0 overflow-x-auto bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 py-2.5">
         <div className="flex gap-2" style={{ width: "max-content" }}>
           {FILTERS.map((f) => (
@@ -107,7 +105,6 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Map / List toggle */}
       <div className="flex-shrink-0 flex border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
         {(["map", "list"] as const).map((v) => (
           <button
@@ -124,17 +121,14 @@ export default function MapPage() {
         ))}
       </div>
 
-      {/* Map view */}
       {view === "map" && (
         <>
-          {/* Map */}
           <div className="relative flex-shrink-0" style={{ height: "50%" }}>
             <LeafletMap
               stops={filtered}
               selectedStop={selected}
               onSelectStop={selectStop}
             />
-            {/* Legend */}
             <div className="absolute bottom-3 left-3 z-20 bg-white/95 dark:bg-slate-900/95 rounded-xl p-2.5 shadow pointer-events-none">
               {[
                 { color: "#16a34a", label: "Accessible" },
@@ -149,7 +143,6 @@ export default function MapPage() {
             </div>
           </div>
 
-          {/* Selected stop card */}
           {selected ? (
             <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 px-4 py-3">
               <div className="flex items-start justify-between gap-2 mb-2.5">
@@ -180,7 +173,6 @@ export default function MapPage() {
             </div>
           )}
 
-          {/* Mini list */}
           <div className="flex-1 overflow-y-auto min-h-0 bg-slate-50 dark:bg-slate-950">
             {filtered.slice(0, 100).map((stop) => (
               <button
@@ -207,7 +199,6 @@ export default function MapPage() {
         </>
       )}
 
-      {/* List view */}
       {view === "list" && (
         <div className="flex-1 overflow-y-auto min-h-0 bg-slate-50 dark:bg-slate-950">
           <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
