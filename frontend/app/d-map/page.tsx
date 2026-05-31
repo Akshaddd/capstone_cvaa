@@ -3,7 +3,7 @@
 import { useMemo, useState, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { Sidebar, PageHeader, StatusBadge, USER_NAV } from "../shared-desktop";
-import rawStops from "../map/real-stops.json";
+import rawStops from "../data/stops.json";
 
 type Stop = {
   id: string; name: string; lat: number; lng: number;
@@ -56,7 +56,6 @@ export default function DesktopMapPage() {
 
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, overflow: "hidden" }}>
 
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0">
           <div>
             <h1 className="text-xl font-bold text-slate-900 dark:text-white">Accessibility Map</h1>
@@ -70,14 +69,11 @@ export default function DesktopMapPage() {
           />
         </div>
 
-        {/* Body — sidebar list + map side by side */}
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-          {/* Left panel — filter + stop list */}
           <div style={{ width: 280, flexShrink: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}
             className="border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
 
-            {/* Filter pills */}
             <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap gap-2 flex-shrink-0">
               {FILTERS.map((f) => (
                 <button key={f} onClick={() => setFilter(f)}
@@ -91,7 +87,6 @@ export default function DesktopMapPage() {
               ))}
             </div>
 
-            {/* Stop list */}
             <div style={{ flex: 1, overflowY: "auto" }}>
               {filtered.slice(0, 200).map((stop) => (
                 <button key={stop.id} onClick={() => setSelected(stop)}
@@ -117,7 +112,6 @@ export default function DesktopMapPage() {
               )}
             </div>
 
-            {/* Selected stop action */}
             {selected && (
               <div className="border-t border-slate-200 dark:border-slate-700 p-4 flex-shrink-0">
                 <p className="text-sm font-bold text-slate-900 dark:text-white truncate mb-0.5">{selected.name}</p>
@@ -130,13 +124,11 @@ export default function DesktopMapPage() {
             )}
           </div>
 
-          {/* Map*/}
           <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
             <Suspense>
               <LeafletMap stops={filtered} selectedStop={selected} onSelectStop={setSelected} />
             </Suspense>
 
-            {/* Legend */}
             <div className="absolute bottom-4 left-4 z-10 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm pointer-events-none">
               {[
                 { color: "#16a34a", label: "Accessible" },

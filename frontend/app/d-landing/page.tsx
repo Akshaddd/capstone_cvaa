@@ -37,7 +37,6 @@ export default function DesktopLandingPage() {
         </nav>
       </header>
 
-      {/* Hero */}
       <section className="max-w-7xl mx-auto px-8 py-24 grid grid-cols-2 gap-16 items-center">
         <div>
           <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
@@ -69,7 +68,6 @@ export default function DesktopLandingPage() {
         </div>
       </section>
 
-      {/* How it works */}
       <section id="how" className="bg-slate-50 dark:bg-slate-800 border-y border-slate-200 dark:border-slate-700 py-20">
         <div className="max-w-7xl mx-auto px-8">
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 text-center">How it works</h2>
@@ -88,7 +86,6 @@ export default function DesktopLandingPage() {
         </div>
       </section>
 
-      {/* About */}
       <section id="about" className="max-w-7xl mx-auto px-8 py-24 flex justify-center">
         <div className="bg-emerald-700 rounded-3xl p-10 text-white text-center max-w-xl w-full">
           <p className="text-5xl font-extrabold mb-3">DSAPT</p>

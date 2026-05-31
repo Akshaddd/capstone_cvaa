@@ -1,7 +1,7 @@
 "use client";
 
 import { Sidebar, PageHeader, StatusBadge, USER_NAV } from "../shared-desktop";
-import rawStops from "../map/real-stops.json";
+import rawStops from "../data/stops.json";
 
 type Stop = {
   id: string; name: string; lat: number; lng: number;

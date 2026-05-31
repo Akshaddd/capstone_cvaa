@@ -175,7 +175,6 @@ function FindingRow({ detection }: { detection: Detection }) {
       {open && (
         <div className="border-t border-black/5 dark:border-white/5 px-4 py-4 flex flex-col gap-4">
 
-          {/* Plain English*/}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">What this means</p>
             <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{entry.plainEnglish}</p>
@@ -288,7 +287,6 @@ export default function DesktopReportPage() {
 
           <div className="col-span-2 flex flex-col gap-5">
 
-            {/* Score + plain English summary*/}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
               <div className="flex items-start gap-5">
                 <div className="w-16 h-16 rounded-full border-4 border-emerald-700 flex items-center justify-center flex-shrink-0">
@@ -300,7 +298,6 @@ export default function DesktopReportPage() {
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${overallStyle}`}>{overallLabel}</span>
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400 capitalize mb-3">{stopMode} stop · {isDemo ? "Demo data" : "Live scan"}</p>
-                  {/* Plain English summary */}
                   <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">In plain English</p>
                     <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{plainSummary}</p>
@@ -324,7 +321,6 @@ export default function DesktopReportPage() {
               </div>
             </div>
 
-            {/* Findings */}
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
                 DSAPT Findings — click any row to expand with plain English explanation
@@ -341,7 +337,6 @@ export default function DesktopReportPage() {
             </div>
           </div>
 
-          {/* Who can use this stop */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Who can use this stop</p>
             <div className="flex flex-col gap-2">
