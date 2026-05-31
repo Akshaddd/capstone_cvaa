@@ -102,7 +102,7 @@ const FALLBACK = [
   { class: "gap",       confidence: 0.42, bbox: [] as number[] },
 ];
 
-interface Detection { class: string; confidence: number; bbox: number[]; }
+interface Detection { class: string; confidence: number; bbox: number[]; inferredMissing?: boolean; }
 interface ScanResult {
   detections?: Detection[]; _demo?: boolean;
   selectedStop?: { id?: string; name?: string; mode?: string; status?: string };
@@ -196,6 +196,37 @@ function getStatus(c: number, cls?: string) {
   return c >= 0.65 ? "Detected" : c >= 0.35 ? "Review" : "Not detected";
 }
 
+function expectedEvidenceClasses(detections: Detection[]) {
+  const detected = new Set(detections.map((d) => normalizeClassName(d.class)));
+  const isVehicleBoardingImage =
+    detected.has("bus") ||
+    detected.has("tram") ||
+    detected.has("gap") ||
+    detected.has("person") ||
+    detected.has("wheelchair") ||
+    detected.has("ramp");
+
+  if (!isVehicleBoardingImage) return [] as string[];
+
+  return ["ramp", "tactile", "stop_sign", "person"];
+}
+
+function addMissingEvidenceRows(detections: Detection[]) {
+  const existing = new Set(detections.map((d) => normalizeClassName(d.class)));
+  const expected = expectedEvidenceClasses(detections);
+
+  const missing = expected
+    .filter((cls) => !existing.has(cls))
+    .map((cls) => ({
+      class: cls,
+      confidence: 0,
+      bbox: [] as number[],
+      inferredMissing: true,
+    }));
+
+  return [...detections, ...missing];
+}
+
 function statusChip(s: string) {
   if (s === "Detected") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300";
   if (s === "Review")   return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
@@ -238,7 +269,7 @@ function getProfile(dets: Detection[]) {
 function getReportMapStatus(result: ScanResult | null): StopStatus {
   const raws = result?.detections?.length ? result.detections : FALLBACK;
 
-  const deduped = Object.values(
+  const dedupedBase = Object.values(
     raws.reduce<Record<string, Detection>>((acc, d) => {
       const normalized = normalizeClassName(d.class);
       if (!DSAPT[normalized]) return acc;
@@ -247,6 +278,8 @@ function getReportMapStatus(result: ScanResult | null): StopStatus {
       return acc;
     }, {})
   );
+
+  const deduped = addMissingEvidenceRows(dedupedBase);
 
   const warnings = deduped.filter((d) => getStatus(d.confidence, d.class) === "Review").length;
   const failed = deduped.filter((d) => getStatus(d.confidence, d.class) === "Not detected").length;
@@ -395,7 +428,7 @@ function FindingRow({ detection }: { detection: Detection }) {
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Assessment finding</p>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                {status === "Detected" ? entry.passNote : entry.failNote}
+                {detection.inferredMissing ? "This evidence item was not confirmed in the uploaded image and should be checked manually." : status === "Detected" ? entry.passNote : entry.failNote}
               </p>
             </div>
             <div>
@@ -404,10 +437,10 @@ function FindingRow({ detection }: { detection: Detection }) {
             </div>
           </div>
 
-          {status !== "Detected" && (
+          {(status !== "Detected" || detection.inferredMissing) && (
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1.5">Recommended review action</p>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{entry.action}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{detection.inferredMissing ? "Capture an additional clear photo focused on this feature before confirming the stop accessibility status." : entry.action}</p>
             </div>
           )}
           <div>
@@ -493,7 +526,7 @@ export default function DesktopReportPage() {
 
   const raws = scan?.detections?.length ? scan.detections : FALLBACK;
 
-  const deduped = Object.values(
+  const dedupedBase = Object.values(
     raws.reduce<Record<string, Detection>>((acc, d) => {
       const normalized = normalizeClassName(d.class);
       if (!DSAPT[normalized]) return acc;
@@ -501,7 +534,9 @@ export default function DesktopReportPage() {
       if (!acc[normalized] || d.confidence > acc[normalized].confidence) acc[normalized] = normalizedDetection;
       return acc;
     }, {})
-  ).sort((a, b) => {
+  );
+
+  const deduped = addMissingEvidenceRows(dedupedBase).sort((a, b) => {
     const so: Record<string, number> = { "Not detected": 0, Review: 1, Detected: 2 };
     const sv: Record<string, number> = { critical: 0, moderate: 1, minor: 2 };
     return (so[getStatus(a.confidence, a.class)] - so[getStatus(b.confidence, b.class)]) ||
@@ -511,7 +546,7 @@ export default function DesktopReportPage() {
   const passed   = deduped.filter((d) => getStatus(d.confidence, d.class) === "Detected").length;
   const warnings = deduped.filter((d) => getStatus(d.confidence, d.class) === "Review").length;
   const failed   = deduped.filter((d) => getStatus(d.confidence, d.class) === "Not detected").length;
-  const score    = Math.round((passed / Math.max(deduped.length, 1)) * 100);
+  const score    = Math.round(((passed + warnings * 0.5) / Math.max(deduped.length, 1)) * 100);
   const isReviewDataset = !scan?.detections?.length || !!scan._demo;
   const stopName = scan?.selectedStop?.name ?? "Selected Stop";
   const stopMode = scan?.selectedStop?.mode ?? "transport";
