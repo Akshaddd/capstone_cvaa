@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// ── Theme hook ────────────────────────────────────────────────────────────────
-
 export function useTheme() {
-  // Initialize directly from the DOM — the blocking script in layout.tsx
-  // already set the correct class before paint, so this is always accurate
   const [dark, setDark] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return document.documentElement.classList.contains("dark");
@@ -31,12 +27,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ── ThemeToggle ───────────────────────────────────────────────────────────────
-
 export function ThemeToggle() {
   const { dark, toggle } = useTheme();
 
-  // Avoid hydration mismatch — render a placeholder until client mounts
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -53,7 +46,6 @@ export function ThemeToggle() {
       className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center flex-shrink-0"
     >
       {dark ? (
-        // Sun icon — click to go light
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="5" />
           <line x1="12" y1="1" x2="12" y2="3" />
@@ -66,7 +58,6 @@ export function ThemeToggle() {
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
         </svg>
       ) : (
-        // Moon icon — click to go dark
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>
@@ -74,8 +65,6 @@ export function ThemeToggle() {
     </button>
   );
 }
-
-// ── BottomNav ─────────────────────────────────────────────────────────────────
 
 export type NavItem = { label: string; href: string };
 
@@ -103,8 +92,6 @@ export function BottomNav({ items, active }: { items: NavItem[]; active: string 
     </nav>
   );
 }
-
-// ── StatusBadge ───────────────────────────────────────────────────────────────
 
 type Status = "mostly_accessible" | "partial_access" | "review_required";
 
