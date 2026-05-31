@@ -426,18 +426,6 @@ export default function DesktopMapPage() {
               onRequestLocation={useDeviceLocation}
             />
 
-            <div className="absolute bottom-4 left-4 z-10 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm pointer-events-none">
-              {[
-                { color: "#16a34a", label: "Accessible" },
-                { color: "#d97706", label: "Partial"    },
-                { color: "#dc2626", label: "Needs review"     },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 mb-1 last:mb-0">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: item.color }} />
-                  {item.label}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

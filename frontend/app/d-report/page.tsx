@@ -107,6 +107,33 @@ interface ScanResult {
   detections?: Detection[]; _demo?: boolean;
   selectedStop?: { id?: string; name?: string; mode?: string; status?: string };
   scannedAt?: string;
+  measurements?: MeasurementResult;
+  measurement?: MeasurementResult;
+  depth?: MeasurementResult;
+  depth_estimation?: MeasurementResult;
+  depthEstimate?: MeasurementResult;
+  depth_result?: MeasurementResult;
+  measurement_result?: MeasurementResult;
+}
+
+interface MeasurementResult {
+  ramp_length_m?: number;
+  ramp_width_m?: number;
+  ramp_slope_degrees?: number;
+  tactile_length_m?: number;
+  tactile_width_m?: number;
+  distance_m?: number;
+  area_m2?: number;
+  confidence?: number;
+  method?: string;
+  notes?: string;
+  status?: string;
+  metric_scale?: number | null;
+  measurements?: unknown;
+  flags?: unknown;
+  depth_image_path?: string;
+  annotated_image_path?: string;
+  [key: string]: unknown;
 }
 
 function normalizeClassName(cls: string) {
@@ -161,9 +188,10 @@ function getEntry(cls: string): DsaptEntry {
 function getStatus(c: number, cls?: string) {
   const normalized = cls ? normalizeClassName(cls) : "";
 
-  // Ramps and level-access indicators are often partially visible in a single boarding image.
-  // Treat a moderate-confidence ramp detection as detected, but keep the confidence visible for auditor review.
-  if ((normalized === "ramp" || normalized === "wheelchair") && c >= 0.35) return "Detected";
+  // Ramps and level-access indicators are often partially visible or occluded in a single boarding image.
+  // Treat lower-confidence ramp evidence as detected when the model has still found a plausible ramp/level-access feature.
+  // The confidence percentage remains visible, so auditors can still review uncertain detections.
+  if ((normalized === "ramp" || normalized === "wheelchair") && c >= 0.30) return "Detected";
 
   return c >= 0.65 ? "Detected" : c >= 0.35 ? "Review" : "Not detected";
 }
@@ -248,6 +276,91 @@ function saveStopStatusFromReport(result: ScanResult | null) {
   }
 }
 
+function getMeasurementResult(scan: ScanResult | null): MeasurementResult | null {
+  const raw = scan?.measurements ?? scan?.measurement ?? scan?.depth ?? scan?.depth_estimation ?? scan?.depthEstimate ?? scan?.depth_result ?? scan?.measurement_result ?? null;
+  if (!raw || typeof raw !== "object") return null;
+
+  const result = raw as MeasurementResult;
+  const nested = result.measurements;
+
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    return {
+      ...result,
+      ...(nested as Record<string, unknown>),
+      method: result.method ?? "Depth Anything V2 Large / monocular depth estimation",
+    };
+  }
+
+  return {
+    ...result,
+    method: result.method ?? "Depth Anything V2 Large / monocular depth estimation",
+  };
+}
+
+
+function formatMeasurementValue(value: unknown) {
+  if (typeof value === "number") return value.toFixed(value >= 10 ? 1 : 2);
+  if (typeof value === "string" && value.trim()) return value;
+  return "Not available";
+}
+
+function getFlexibleMeasurementRows(measurement: MeasurementResult | null) {
+  if (!measurement) return [] as Array<{ label: string; value: unknown; unit: string }>;
+
+  const directRows = [
+    { label: "Ramp length estimate", value: measurement.ramp_length_m, unit: "m" },
+    { label: "Ramp width estimate", value: measurement.ramp_width_m, unit: "m" },
+    { label: "Ramp slope estimate", value: measurement.ramp_slope_degrees, unit: "°" },
+    { label: "Tactile surface length", value: measurement.tactile_length_m, unit: "m" },
+    { label: "Tactile surface width", value: measurement.tactile_width_m, unit: "m" },
+    { label: "Estimated distance", value: measurement.distance_m, unit: "m" },
+    { label: "Estimated area", value: measurement.area_m2, unit: "m²" },
+  ].filter((row) => row.value !== undefined && row.value !== null);
+
+  const rawMeasurements = measurement.measurements;
+  const nestedRows: Array<{ label: string; value: unknown; unit: string }> = [];
+
+  if (rawMeasurements && typeof rawMeasurements === "object" && !Array.isArray(rawMeasurements)) {
+    Object.entries(rawMeasurements as Record<string, unknown>).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+
+      const label = key
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+
+      const unit = key.includes("slope") || key.includes("angle")
+        ? "°"
+        : key.includes("area")
+        ? "m²"
+        : key.includes("depth") || key.includes("height") || key.includes("length") || key.includes("width") || key.includes("distance")
+        ? "m"
+        : "";
+
+      nestedRows.push({ label, value, unit });
+    });
+  }
+
+  return [...directRows, ...nestedRows].slice(0, 6);
+}
+
+function summariseUnknownMeasurements(measurement: MeasurementResult | null) {
+  const raw = measurement?.measurements;
+  if (!raw) return null;
+
+  if (Array.isArray(raw)) {
+    if (raw.length === 0) return "Depth model ran, but no measurable ramp or tactile-surface segments were returned.";
+    return `${raw.length} depth measurement item${raw.length === 1 ? "" : "s"} returned for manual review.`;
+  }
+
+  if (typeof raw === "object") {
+    const keys = Object.keys(raw as Record<string, unknown>);
+    if (keys.length === 0) return "Depth model ran, but no stable measurement values were returned.";
+    return `Depth model returned measurement data (${keys.slice(0, 6).join(", ")}${keys.length > 6 ? "…" : ""}), but no calibrated metre-based values were available for display. Use this as evidence that the measurement module ran, not as a final compliance measurement.`;
+  }
+
+  return String(raw);
+}
+
 function FindingRow({ detection }: { detection: Detection }) {
   const [open, setOpen] = useState(false);
   const entry  = getEntry(detection.class);
@@ -307,6 +420,51 @@ function FindingRow({ detection }: { detection: Detection }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ExperimentalMeasurementPanel({ measurement }: { measurement: MeasurementResult | null }) {
+  const hasMeasurement = Boolean(measurement && Object.keys(measurement).length > 0);
+
+  const rows = getFlexibleMeasurementRows(measurement);
+
+  const measurementSummary = summariseUnknownMeasurements(measurement);
+
+  return (
+    <div className="rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/80 dark:bg-blue-950/30 p-4 mt-5">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300 mb-1">Experimental measurement estimate</p>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Depth-based measurement support</h3>
+        </div>
+        <span className="text-[10px] font-bold uppercase rounded-full px-2.5 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">Beta</span>
+      </div>
+
+      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+        The system can use the depth-estimation module to support rough measurement of visible access features such as deployed ramps, boarding surfaces, tactile paving, or nearby walking surfaces. These estimates are decision-support only and must be verified manually before any DSAPT compliance decision.
+      </p>
+
+      {hasMeasurement && rows.length > 0 ? (
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          {rows.map((row) => (
+            <div key={row.label} className="rounded-xl border border-blue-100 dark:border-blue-900 bg-white/70 dark:bg-slate-900/70 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">{row.label}</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">{formatMeasurementValue(row.value)} <span className="text-xs text-slate-400">{row.unit}</span></p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-white/70 dark:bg-slate-900/70 p-3">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            {measurementSummary ?? "No stable measurement values were returned for this image. The scan still supports visual DSAPT-linked observations, but ramp length, slope, width, or tactile-surface measurements need manual verification."}
+          </p>
+        </div>
+      )}
+
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-3">
+        Measurement method: {String(measurement?.method ?? "Depth Anything V2 Large / monocular depth estimation")}. Status: {String(measurement?.status ?? "available when backend returns calibrated values")}. Results may vary with camera angle, occlusion, lighting, and missing real-world calibration.
+      </p>
     </div>
   );
 }
@@ -376,6 +534,8 @@ export default function DesktopReportPage() {
     ? `This assessment found no high-priority failures, but ${warnings} item${warnings > 1 ? "s" : ""} should be reviewed before the stop is marked as fully accessible.`
     : "No issues were flagged across the checked visual indicators. Operator verification is still recommended before confirming compliance.";
 
+  const measurement = getMeasurementResult(scan);
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <Sidebar nav={USER_NAV} active="/d-reports" user={{ initials: "JD", name: "J. Doe", role: "Public user" }} />
@@ -438,6 +598,8 @@ export default function DesktopReportPage() {
                 {deduped.map((d) => <FindingRow key={d.class} detection={d} />)}
               </div>
             </div>
+
+            <ExperimentalMeasurementPanel measurement={measurement} />
 
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
               <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">

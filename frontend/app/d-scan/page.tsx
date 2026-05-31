@@ -24,6 +24,17 @@ const DEMO_RESULT = {
   _demo: true,
 };
 
+function getMeasurementPayload(data: Record<string, unknown>) {
+  return data.measurements
+    ?? data.measurement
+    ?? data.depth
+    ?? data.depth_estimation
+    ?? data.depthEstimate
+    ?? data.depth_result
+    ?? data.measurement_result
+    ?? null;
+}
+
 function ScanContent() {
   const params     = useSearchParams();
   const stopId     = params.get("id")     ?? "";
@@ -69,11 +80,35 @@ function ScanContent() {
       clearTimeout(t);
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
-      sessionStorage.setItem("scanResult", JSON.stringify({ ...data, selectedStop: stopMeta, scannedAt: new Date().toISOString(), _demo: false }));
+      const measurementPayload = getMeasurementPayload(data);
+      sessionStorage.setItem("scanResult", JSON.stringify({
+        ...data,
+        measurements: measurementPayload,
+        measurement: measurementPayload,
+        depth: measurementPayload,
+        depth_estimation: measurementPayload,
+        depthEstimate: measurementPayload,
+        depth_result: measurementPayload,
+        measurement_result: measurementPayload,
+        selectedStop: stopMeta,
+        scannedAt: new Date().toISOString(),
+        _demo: false,
+      }));
     } catch {
       setStatus("Live scan unavailable — preparing a review-ready assessment...");
       await new Promise((r) => setTimeout(r, 600));
-      sessionStorage.setItem("scanResult", JSON.stringify({ ...DEMO_RESULT, selectedStop: stopMeta, scannedAt: new Date().toISOString() }));
+      sessionStorage.setItem("scanResult", JSON.stringify({
+        ...DEMO_RESULT,
+        measurements: null,
+        measurement: null,
+        depth: null,
+        depth_estimation: null,
+        depthEstimate: null,
+        depth_result: null,
+        measurement_result: null,
+        selectedStop: stopMeta,
+        scannedAt: new Date().toISOString(),
+      }));
     } finally {
       setLoading(false); setStatus(null);
       window.location.href = "/d-report";
