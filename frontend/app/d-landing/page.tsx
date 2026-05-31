@@ -3,16 +3,16 @@
 import { ThemeToggle } from "../shared-desktop";
 
 const HOW_IT_WORKS = [
-  { step: "1", title: "Find a stop",  desc: "Browse the map or search by stop name or route number" },
-  { step: "2", title: "Scan it",      desc: "Upload photos from your phone or computer"             },
-  { step: "3", title: "Get a report", desc: "Instant plain-English report showing who can use the stop and what needs fixing" },
+  { step: "1", title: "Select a stop",  desc: "Search or browse a public transport location before starting an audit." },
+  { step: "2", title: "Upload evidence", desc: "Add images captured from a phone, camera, or desktop device." },
+  { step: "3", title: "Generate report", desc: "Review detected features, potential barriers, and standards-linked recommendations." },
 ];
 
 const STATS = [
-  { val: "DSAPT",        label: "Compliance standard"      },
-  { val: "AI-powered",   label: "Smart photo analysis"     },
-  { val: "Plain English",label: "Reports anyone can read"  },
-  { val: "Free",         label: "For everyone, always"     },
+  { val: "DSAPT mapping", label: "Aligns findings with selected accessibility standards" },
+  { val: "Computer vision", label: "Detects visible features and potential barriers" },
+  { val: "Operator-ready", label: "Creates structured findings for review and action" },
+  { val: "Scalable audits", label: "Built to reduce manual inspection effort across networks" },
 ];
 
 export default function DesktopLandingPage() {
@@ -37,32 +37,32 @@ export default function DesktopLandingPage() {
         </nav>
       </header>
 
-      <section className="max-w-7xl mx-auto px-8 py-24 grid grid-cols-2 gap-16 items-center">
+      <section className="max-w-7xl mx-auto px-8 py-20 grid grid-cols-2 gap-16 items-center">
         <div>
           <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-            Accessibility auditing tool
+            Transport accessibility intelligence
           </span>
           <h1 className="text-5xl font-bold leading-tight text-slate-900 dark:text-white mb-6">
-            Audit public transport stops for accessibility
+            Assess public transport accessibility using computer vision
           </h1>
           <p className="text-xl text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-            Scan any stop, get an instant DSAPT compliance report, and submit issues directly to operators and councils.
+            Capture visual evidence from tram stops, bus stops, or train platforms. MyAccess identifies visible accessibility features, flags potential barriers, and produces structured DSAPT-aligned findings for review.
           </p>
           <div className="flex gap-4">
             <a href="/d-register" className="bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl hover:bg-emerald-800">
-              Start auditing for free
+              Start audit
             </a>
             <a href="/d-map" className="border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-6 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">
-              Browse the map
+              View accessibility map
             </a>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           {STATS.map((s) => (
-            <div key={s.label} className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
-              <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">{s.val}</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{s.label}</p>
+            <div key={s.label} className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm hover:border-emerald-500/60 transition-colors">
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 mb-2">{s.val}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{s.label}</p>
             </div>
           ))}
         </div>
@@ -71,7 +71,7 @@ export default function DesktopLandingPage() {
       <section id="how" className="bg-slate-50 dark:bg-slate-800 border-y border-slate-200 dark:border-slate-700 py-20">
         <div className="max-w-7xl mx-auto px-8">
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 text-center">How it works</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-center mb-12">Three steps to a full accessibility report</p>
+          <p className="text-slate-500 dark:text-slate-400 text-center mb-12">A practical workflow from location evidence to action-ready accessibility findings</p>
           <div className="grid grid-cols-3 gap-8">
             {HOW_IT_WORKS.map((s) => (
               <div key={s.step} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
@@ -87,21 +87,27 @@ export default function DesktopLandingPage() {
       </section>
 
       <section id="about" className="max-w-7xl mx-auto px-8 py-24 flex justify-center">
-        <div className="bg-emerald-700 rounded-3xl p-10 text-white text-center max-w-xl w-full">
-          <p className="text-5xl font-extrabold mb-3">DSAPT</p>
-          <p className="text-emerald-200 text-lg mb-6">Disability Standards for Accessible Public Transport</p>
-          <p className="text-emerald-100 text-sm leading-relaxed">
-            Every report is checked against the DSAPT 2002 framework — the Australian legal standard for accessible public transport infrastructure.
+        <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-10 text-center max-w-3xl w-full shadow-sm">
+          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mb-3">Standards-aligned review</p>
+          <p className="text-5xl font-extrabold mb-3 text-slate-900 dark:text-white">DSAPT</p>
+          <p className="text-slate-600 dark:text-slate-300 text-lg mb-6">Disability Standards for Accessible Public Transport</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-2xl mx-auto">
+            Reports translate visual observations into selected DSAPT-linked findings so operators and councils can review accessibility risks faster, prioritise maintenance, and identify locations that need manual verification.
           </p>
-          <a href="/d-register" className="inline-block mt-8 bg-white text-emerald-700 font-bold px-6 py-3 rounded-xl hover:bg-emerald-50">
-            Start your first audit
-          </a>
+          <div className="flex justify-center gap-4 mt-8">
+            <a href="/d-register" className="inline-block bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl hover:bg-emerald-800">
+              Start your first audit
+            </a>
+            <a href="/d-map" className="inline-block border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-6 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-900">
+              Explore map
+            </a>
+          </div>
         </div>
       </section>
 
       <footer className="border-t border-slate-200 dark:border-slate-700 py-8">
         <div className="max-w-7xl mx-auto px-8 flex items-center justify-between text-sm text-slate-400 dark:text-slate-500">
-          <span>MyAccess &copy; {new Date().getFullYear()}</span>
+          <span>MyAccess &copy; {new Date().getFullYear()} · Accessibility audit platform</span>
           <div className="flex gap-6">
             <a href="/d-login"    className="hover:text-slate-600 dark:hover:text-slate-300">Sign in</a>
             <a href="/d-register" className="hover:text-slate-600 dark:hover:text-slate-300">Register</a>
