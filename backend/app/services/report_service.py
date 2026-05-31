@@ -1,4 +1,5 @@
 from app.models.report_models import ReportRequest, ReportResponse, DetectionOutput
+from app.services.dsapt_service import check_dsapt_compliance
 
 
 DSAPT_FEATURE_MAPPING = {
@@ -139,6 +140,8 @@ def build_report(request: ReportRequest) -> ReportResponse:
         f"DSAPT-style review summary: {passed_count} pass, {warning_count} warning, {review_count} review."
     )
 
+    dsapt_checks = check_dsapt_compliance(detected_features)
+
     if request.notes:
         summary += f"\n\nAdditional Assessment Notes:\n{request.notes}"
 
@@ -149,4 +152,5 @@ def build_report(request: ReportRequest) -> ReportResponse:
         missing_features=request.missing_features,
         recommendations=recommendations,
         dsapt_results=dsapt_results,
+        dsapt_checks=dsapt_checks
     )
