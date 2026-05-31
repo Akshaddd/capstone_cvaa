@@ -1,174 +1,282 @@
-export default function PtvMobileDashboardPage() {
-  const reports = [
-    {
-      color: "bg-red-600",
-      title: "Stop #14 — Platform gap 82mm",
-      meta: "Swanston St / Bourke St · 2h ago",
-      chip: "Critical",
-      chipStyle: "bg-red-100 text-red-700",
-    },
-    {
-      color: "bg-yellow-500",
-      title: "Stop #27 — Tactile surface wear",
-      meta: "Collins St / Spencer St · Yesterday",
-      chip: "Active",
-      chipStyle: "bg-yellow-100 text-yellow-700",
-    },
-    {
-      color: "bg-blue-600",
-      title: "Stop #3 — Signage obstruction",
-      meta: "Flinders St / Elizabeth St · 3d ago",
-      chip: "Scheduled",
-      chipStyle: "bg-blue-100 text-blue-700",
-    },
-    {
-      color: "bg-emerald-600",
-      title: "Stop #89 — Kerb ramp damage",
-      meta: "Chapel St / Toorak Rd · 4d ago",
-      chip: "Resolved",
-      chipStyle: "bg-emerald-100 text-emerald-700",
-    },
-  ];
+"use client";
 
-  const routes = [
-    ["Route 70", 96, "bg-emerald-600"],
-    ["Route 86", 88, "bg-emerald-600"],
-    ["Route 48", 79, "bg-yellow-400"],
-    ["Route 12", 58, "bg-red-500"],
-  ];
+import { useState } from "react";
+import { ThemeToggle, BottomNav } from "../shared";
+
+const NAV = [
+  { label: "Dashboard", href: "/m-ptv"     },
+  { label: "Map",       href: "/m-map"     },
+  { label: "Scan",      href: "/m-scan"    },
+  { label: "Sign out",  href: "/m-landing" },
+];
+
+type Tab = "Dashboard" | "Stop reports" | "Routes" | "Maintenance";
+const TABS: Tab[] = ["Dashboard", "Stop reports", "Routes", "Maintenance"];
+
+const STATS = [
+  { val: "148", label: "Total stops", color: "text-slate-900 dark:text-white"          },
+  { val: "91%", label: "Compliance",  color: "text-emerald-700 dark:text-emerald-400"  },
+  { val: "23",  label: "Pending",     color: "text-yellow-600 dark:text-yellow-400"    },
+  { val: "7",   label: "Critical",    color: "text-red-600 dark:text-red-400"          },
+];
+
+interface StopReport {
+  id: string; stopNumber: string; title: string;
+  location: string; ago: string; status: "Critical" | "Active" | "Scheduled" | "Resolved";
+}
+
+const STOP_REPORTS: StopReport[] = [
+  { id: "SR-001", stopNumber: "Stop #14",  title: "Platform gap 82mm — exceeds DSAPT limit", location: "Swanston St / Bourke St",      ago: "2h ago",      status: "Critical"  },
+  { id: "SR-002", stopNumber: "Stop #27",  title: "Tactile surface wear — 60% degraded",      location: "Collins St / Spencer St",     ago: "Yesterday",   status: "Active"    },
+  { id: "SR-003", stopNumber: "Stop #3",   title: "Signage obstruction — tree branch",         location: "Flinders St / Elizabeth St",  ago: "3 days ago",  status: "Scheduled" },
+  { id: "SR-004", stopNumber: "Stop #89",  title: "Kerb ramp damage — surface cracked",        location: "Chapel St / Toorak Rd",       ago: "4 days ago",  status: "Resolved"  },
+  { id: "SR-005", stopNumber: "Stop #52",  title: "Missing boarding ramp",                     location: "St Kilda Rd / Domain Rd",     ago: "5 days ago",  status: "Critical"  },
+  { id: "SR-006", stopNumber: "Stop #71",  title: "Shelter damage — wind damage",              location: "Brunswick St / Alexandra Pde",ago: "1 week ago",  status: "Active"    },
+  { id: "SR-007", stopNumber: "Stop #104", title: "Gap filler worn — needs replacement",       location: "Nicholson St / Gertrude St",  ago: "1 week ago",  status: "Scheduled" },
+  { id: "SR-008", stopNumber: "Stop #33",  title: "Tactile strip fully replaced",              location: "Elizabeth St / La Trobe St",  ago: "2 weeks ago", status: "Resolved"  },
+];
+
+const ROUTES = [
+  { name: "Route 70",  pct: 96, stops: 34, issues: 1 },
+  { name: "Route 86",  pct: 88, stops: 28, issues: 3 },
+  { name: "Route 48",  pct: 79, stops: 22, issues: 5 },
+  { name: "Route 12",  pct: 58, stops: 19, issues: 8 },
+  { name: "Route 96",  pct: 94, stops: 31, issues: 2 },
+  { name: "Route 109", pct: 83, stops: 26, issues: 4 },
+];
+
+const MAINTENANCE = [
+  { title: "Tactile replacement — Stop #27", due: "Tomorrow",   priority: "High",     assignee: "Team A" },
+  { title: "Gap filler — Stop #14",          due: "In 2 days",  priority: "Critical", assignee: "Team B" },
+  { title: "Signage — Stop #3",              due: "This week",  priority: "Medium",   assignee: "Team C" },
+  { title: "Shelter repair — Stop #71",      due: "Next week",  priority: "Low",      assignee: "Team A" },
+  { title: "Ramp install — Stop #52",        due: "Next week",  priority: "High",     assignee: "Team B" },
+];
+
+const TREND = [62, 71, 68, 78, 82, 88, 91];
+const TREND_LABELS = ["Nov","Dec","Jan","Feb","Mar","Apr","May"];
+
+function statusChip(s: string) {
+  if (s === "Critical")  return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+  if (s === "Active")    return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
+  if (s === "Scheduled") return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
+  if (s === "Resolved")  return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300";
+  return "bg-slate-100 text-slate-500";
+}
+
+function priorityChip(p: string) {
+  if (p === "Critical") return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+  if (p === "High")     return "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
+  if (p === "Medium")   return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
+  return "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+}
+
+function StopReportDetail({ report, onClose }: { report: StopReport; onClose: () => void }) {
+  const [action, setAction] = useState<string | null>(null);
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-950">
+      <header className="flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
+        <h2 className="text-base font-bold text-slate-900 dark:text-white">Stop Report</h2>
+        <button onClick={onClose} className="text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">← Back</button>
+      </header>
+      <div className="flex flex-col gap-3 p-4 overflow-y-auto pb-10">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">{report.stopNumber} · {report.id}</p>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">{report.title}</h3>
+            </div>
+            <span className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full ${statusChip(report.status)}`}>{report.status}</span>
+          </div>
+          {[
+            { label: "Location", val: report.location },
+            { label: "Reported", val: report.ago      },
+          ].map((row) => (
+            <div key={row.label} className="flex gap-2 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+              <span className="text-xs text-slate-400 dark:text-slate-500 w-20 flex-shrink-0">{row.label}</span>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{row.val}</span>
+            </div>
+          ))}
+        </div>
+        {action && (
+          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
+            {action}
+          </p>
+        )}
+        <button onClick={() => setAction("Report marked as resolved.")} className="w-full bg-emerald-700 text-white font-bold text-sm py-4 rounded-2xl active:bg-emerald-800">Mark as resolved</button>
+        <button onClick={() => setAction("Maintenance scheduled for this stop.")} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-4 rounded-2xl">Schedule maintenance</button>
+        <button onClick={() => setAction("Report escalated to council.")} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-4 rounded-2xl">Escalate to council</button>
+      </div>
+    </div>
+  );
+}
+
+function DashboardTab({ onSelect }: { onSelect: (r: StopReport) => void }) {
+  const critical = STOP_REPORTS.filter((r) => r.status === "Critical");
+  const active   = STOP_REPORTS.filter((r) => r.status === "Active");
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        {STATS.map((s) => (
+          <div key={s.label} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <p className={`text-2xl font-bold ${s.color}`}>{s.val}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">Compliance trend</p>
+        <div className="flex items-end gap-2 h-20">
+          {TREND.map((v, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div className={`w-full rounded-t-md ${v >= 85 ? "bg-emerald-500" : v >= 70 ? "bg-yellow-400" : "bg-red-500"}`} style={{ height: `${(v / 100) * 64}px` }} />
+              <span className="text-[9px] text-slate-400 dark:text-slate-500">{TREND_LABELS[i]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {critical.length > 0 && (
+        <>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-red-500 mt-1">Critical — action required</p>
+          {critical.map((r) => (
+            <button key={r.id} onClick={() => onSelect(r)} className="w-full text-left bg-red-50 dark:bg-red-950 rounded-2xl border border-red-200 dark:border-red-800 p-4">
+              <div className="flex items-start justify-between gap-2 mb-1.5">
+                <div>
+                  <p className="text-xs font-semibold text-red-600 dark:text-red-400">{r.stopNumber}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{r.title}</p>
+                </div>
+                <span className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full ${statusChip(r.status)}`}>{r.status}</span>
+              </div>
+              <p className="text-xs text-slate-400 dark:text-slate-500">{r.location} · {r.ago}</p>
+            </button>
+          ))}
+        </>
+      )}
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">Active reports</p>
+      {active.map((r) => (
+        <button key={r.id} onClick={() => onSelect(r)} className="w-full text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-start justify-between gap-2 mb-1.5">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">{r.stopNumber}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{r.title}</p>
+            </div>
+            <span className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full ${statusChip(r.status)}`}>{r.status}</span>
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{r.location} · {r.ago}</p>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function StopReportsTab({ onSelect }: { onSelect: (r: StopReport) => void }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">All stop reports — newest first</p>
+      {STOP_REPORTS.map((r) => (
+        <button key={r.id} onClick={() => onSelect(r)} className="w-full text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-start justify-between gap-2 mb-1.5">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">{r.stopNumber} · {r.id}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">{r.title}</p>
+            </div>
+            <span className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full ${statusChip(r.status)}`}>{r.status}</span>
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{r.location} · {r.ago}</p>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RoutesTab() {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">Compliance by route</p>
+        <div className="flex flex-col gap-4">
+          {ROUTES.map((r) => (
+            <div key={r.name}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{r.name}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-400 dark:text-slate-500">{r.issues} issue{r.issues !== 1 ? "s" : ""}</span>
+                  <span className={`text-sm font-bold ${r.pct >= 85 ? "text-emerald-600 dark:text-emerald-400" : r.pct >= 70 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}`}>{r.pct}%</span>
+                </div>
+              </div>
+              <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className={`h-2 rounded-full ${r.pct >= 85 ? "bg-emerald-500" : r.pct >= 70 ? "bg-yellow-400" : "bg-red-500"}`} style={{ width: `${r.pct}%` }} />
+              </div>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{r.stops} stops</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MaintenanceTab() {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">Scheduled maintenance</p>
+      {MAINTENANCE.map((m, i) => (
+        <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white flex-1">{m.title}</p>
+            <span className={`flex-shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full ${priorityChip(m.priority)}`}>{m.priority}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
+            <span>Due: <span className="font-semibold text-slate-600 dark:text-slate-300">{m.due}</span></span>
+            <span>Assigned: <span className="font-semibold text-slate-600 dark:text-slate-300">{m.assignee}</span></span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function PtvPage() {
+  const [activeTab,      setActiveTab]      = useState<Tab>("Dashboard");
+  const [selectedReport, setSelectedReport] = useState<StopReport | null>(null);
+
+  if (selectedReport) {
+    return <StopReportDetail report={selectedReport} onClose={() => setSelectedReport(null)} />;
+  }
 
   return (
-    <main className="mx-auto min-h-screen max-w-sm bg-[#08120c] text-white shadow-2xl">
-      {/* Status bar */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
-        <span className="text-sm font-semibold text-emerald-300">9:41</span>
-
-        <div className="flex gap-2">
-          <div className="h-3 w-5 rounded bg-emerald-300"></div>
-          <div className="h-3 w-6 rounded border border-emerald-300"></div>
-        </div>
-      </div>
-
-      {/* Header */}
-      <header className="space-y-4 border-b border-emerald-900 px-4 py-3">
-        <div className="flex items-start justify-between gap-3">
+    <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
+      <header className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 pt-4 pb-0">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-sm font-semibold">Network Dashboard</h1>
-            <p className="text-xs text-emerald-300/70">
-              Melbourne tram · live overview
-            </p>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">{activeTab}</h1>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">PTV · Melbourne network</p>
           </div>
-
           <div className="flex items-center gap-2">
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-slate-700">
-              🔔
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
-            </div>
-
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-700 text-xs font-bold">
-              PK
-            </div>
+            <ThemeToggle />
+            <div className="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center text-xs font-bold text-white">PK</div>
           </div>
         </div>
-
-        <div className="grid grid-cols-4 gap-2 text-[11px]">
-          <div className="rounded-full bg-emerald-600 px-2 py-1 text-center font-medium">
-            Overview
-          </div>
-          <div className="rounded-full bg-[#102018] px-2 py-1 text-center text-emerald-300/60">
-            Maintenance
-          </div>
-          <div className="rounded-full bg-[#102018] px-2 py-1 text-center text-emerald-300/60">
-            Reports
-          </div>
-          <div className="rounded-full bg-[#102018] px-2 py-1 text-center text-emerald-300/60">
-            Map
-          </div>
+        <div className="flex gap-5 overflow-x-auto">
+          {TABS.map((tab) => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={`whitespace-nowrap pb-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-emerald-700 text-emerald-700 dark:text-emerald-400 dark:border-emerald-400"
+                  : "border-transparent text-slate-400 dark:text-slate-500"
+              }`}>
+              {tab}
+            </button>
+          ))}
         </div>
       </header>
-
-      {/* Stats */}
-      <section className="grid grid-cols-2 gap-3 px-4 py-4 text-center text-xs">
-        <div className="rounded-2xl bg-[#0f1d14] p-3">
-          <p className="text-xl font-bold text-blue-300">148</p>
-          <p className="text-emerald-100/60">Total stops</p>
-        </div>
-
-        <div className="rounded-2xl bg-[#0f1d14] p-3">
-          <p className="text-xl font-bold text-emerald-300">91%</p>
-          <p className="text-emerald-100/60">Compliance</p>
-        </div>
-
-        <div className="rounded-2xl bg-[#0f1d14] p-3">
-          <p className="text-xl font-bold text-yellow-300">23</p>
-          <p className="text-emerald-100/60">Pending</p>
-        </div>
-
-        <div className="rounded-2xl bg-[#0f1d14] p-3">
-          <p className="text-xl font-bold text-red-300">7</p>
-          <p className="text-emerald-100/60">Critical</p>
-        </div>
-      </section>
-
-      {/* Content */}
-      <div className="space-y-5 px-4 pb-6">
-        {/* Reports */}
-        <section>
-          <h2 className="mb-3 text-sm font-semibold">Critical & active</h2>
-
-          <div className="space-y-3">
-            {reports.map((item) => (
-              <div
-                key={item.title}
-                className="flex gap-3 rounded-2xl bg-[#0f1d14] p-3"
-              >
-                <div className={`mt-1 h-3 w-3 rounded-full ${item.color}`}></div>
-
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-emerald-100/50">{item.meta}</p>
-                </div>
-
-                <span
-                  className={`h-fit rounded-full px-2 py-1 text-[10px] font-semibold ${item.chipStyle}`}
-                >
-                  {item.chip}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Route Compliance */}
-        <section>
-          <h2 className="mb-3 text-sm font-semibold">Compliance by route</h2>
-
-          <div className="space-y-4 rounded-2xl bg-[#0f1d14] p-4">
-            {routes.map((item) => (
-              <div key={item[0]} className="flex items-center gap-3 text-xs">
-                <span className="w-16 text-emerald-100/60">{item[0]}</span>
-
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-700">
-                  <div
-                    className={`h-2 ${item[2]}`}
-                    style={{ width: `${item[1]}%` }}
-                  ></div>
-                </div>
-
-                <span className="w-8 text-right font-medium">{item[1]}%</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      {/* Bottom Nav */}
-      <nav className="grid grid-cols-4 border-t border-emerald-900 bg-[#08120c] py-3 text-center text-[11px]">
-        <div className="font-medium text-emerald-300">Home</div>
-        <div className="text-emerald-300/40">Map</div>
-        <div className="text-emerald-300/40">Reports</div>
-        <div className="text-emerald-300/40">Profile</div>
-      </nav>
-    </main>
+      <main className="flex flex-col gap-0 p-4 pb-24">
+        {activeTab === "Dashboard"    && <DashboardTab onSelect={setSelectedReport} />}
+        {activeTab === "Stop reports" && <StopReportsTab onSelect={setSelectedReport} />}
+        {activeTab === "Routes"       && <RoutesTab />}
+        {activeTab === "Maintenance"  && <MaintenanceTab />}
+      </main>
+      <BottomNav items={NAV} active="/m-ptv" />
+    </div>
   );
 }

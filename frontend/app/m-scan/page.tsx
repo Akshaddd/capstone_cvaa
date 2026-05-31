@@ -1,141 +1,271 @@
-export default function UserScanMobilePage() {
-  const checklist: [string, string, boolean][] = [
-    ["Tactile ground surface", "Photo of the boarding zone floor", true],
-    ["Kerb ramp", "Full ramp including gradient", false],
-    ["Accessible signage", "Stop sign and route info boards", false],
-    ["Platform edge / gap", "Close-up of boarding gap", false],
-    ["Path of travel", "Approach from footpath to stop", false],
-  ];
+"use client";
+
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { ThemeToggle, BottomNav } from "../shared";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+const NAV = [
+  { label: "Home",    href: "/m-home"    },
+  { label: "Scan",    href: "/m-scan"    },
+  { label: "Map",     href: "/m-map"     },
+  { label: "Reports", href: "/m-reports" },
+];
+
+const CHECKLIST = [
+  { label: "Tactile ground surface", hint: "Boarding zone floor"          },
+  { label: "Kerb ramp",              hint: "Full ramp including gradient"  },
+  { label: "Accessible signage",     hint: "Stop sign and route boards"    },
+  { label: "Platform edge / gap",    hint: "Close-up of boarding gap"      },
+  { label: "Path of travel",         hint: "Approach from footpath"        },
+];
+
+const DEMO_RESULT = {
+  detections: [
+    { class: "tactile",   confidence: 0.91, bbox: [] },
+    { class: "ramp",      confidence: 0.83, bbox: [] },
+    { class: "stop_sign", confidence: 0.52, bbox: [] },
+    { class: "gap",       confidence: 0.28, bbox: [] },
+  ],
+  _demo: true,
+};
+
+function ScanContent() {
+  const params     = useSearchParams();
+  const stopId     = params.get("id")     ?? "";
+  const stopName   = params.get("name")   ?? "";
+  const stopMode   = params.get("mode")   ?? "";
+  const stopStatus = params.get("status") ?? "";
+
+  const [files,   setFiles]   = useState<File[]>([]);
+  const [previews,setPreviews]= useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [status,  setStatus]  = useState<string | null>(null);
+  const [error,   setError]   = useState<string | null>(null);
+
+  function handleFiles(list: FileList | null) {
+    if (!list?.length) return;
+    const valid = Array.from(list).filter(
+      (f) => f.type.startsWith("image/") && f.size <= 20 * 1024 * 1024
+    );
+    if (!valid.length) { setError("Please choose an image under 20 MB."); return; }
+    const next = [...files, ...valid].slice(0, 6);
+    previews.forEach(URL.revokeObjectURL);
+    setFiles(next);
+    setPreviews(next.map((f) => URL.createObjectURL(f)));
+    setError(null);
+  }
+
+  function removeFile(index: number) {
+    const next = files.filter((_, i) => i !== index);
+    previews.forEach(URL.revokeObjectURL);
+    setFiles(next);
+    setPreviews(next.map((f) => URL.createObjectURL(f)));
+  }
+
+  async function analyse() {
+    if (!files.length) { setError("Add at least one photo first."); return; }
+    setLoading(true);
+    setError(null);
+
+    const stopMeta = { id: stopId, name: stopName, mode: stopMode, status: stopStatus };
+
+    try {
+      setStatus("Running AI scan...");
+      const form = new FormData();
+      files.forEach((f) => { form.append("file", f); form.append("files", f); });
+
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 15_000);
+      const res = await fetch(`${API_BASE}/inference/scan-combined`, {
+        method: "POST",
+        body: form,
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+      const data = await res.json();
+      sessionStorage.setItem("scanResult", JSON.stringify({
+        ...data,
+        selectedStop: stopMeta,
+        scannedAt: new Date().toISOString(),
+        _demo: false,
+      }));
+    } catch {
+      setStatus("Backend offline — using demo data...");
+      await new Promise((r) => setTimeout(r, 600));
+      sessionStorage.setItem("scanResult", JSON.stringify({
+        ...DEMO_RESULT,
+        selectedStop: stopMeta,
+        scannedAt: new Date().toISOString(),
+      }));
+    } finally {
+      setLoading(false);
+      setStatus(null);
+      window.location.href = "/m-report";
+    }
+  }
 
   return (
-    <main className="mx-auto min-h-screen max-w-sm bg-white text-slate-900 shadow-2xl">
-      {/* Status Bar */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
-        <span className="text-sm font-semibold text-emerald-700">9:41</span>
-        <div className="flex gap-2">
-          <div className="h-3 w-5 rounded bg-emerald-700"></div>
-          <div className="h-3 w-6 rounded border border-emerald-700"></div>
-        </div>
-      </div>
+    <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
 
-      {/* Header */}
-      <header className="flex items-center justify-between border-b px-4 py-3">
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div>
-          <h1 className="text-sm font-semibold">Scan stop</h1>
-          <p className="text-xs text-slate-500">Upload photos to analyse</p>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">Scan Stop</h1>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Upload photos to generate report</p>
         </div>
-
-        <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">
-          2/6 photos
-        </span>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 rounded-full px-3 py-1">
+            {files.length}/6
+          </span>
+        </div>
       </header>
 
-      <div className="space-y-4 px-4 py-4">
-        {/* Upload Box */}
-        <section className="rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 p-4">
-          <div className="mb-4 flex gap-2">
-            <div className="relative flex h-12 w-16 items-center justify-center rounded-lg bg-emerald-700 text-[9px] text-white">
-              stop-front.jpg
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">
-                ×
-              </span>
-            </div>
+      <main className="flex flex-col gap-3 p-4 pb-24">
 
-            <div className="relative flex h-12 w-16 items-center justify-center rounded-lg bg-sky-500 text-[9px] text-white">
-              tactile.jpg
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-900 text-[10px] text-white">
-                ×
-              </span>
-            </div>
-
-            <div className="flex h-12 w-16 items-center justify-center rounded-lg border border-dashed text-xl text-slate-400">
-              +
-            </div>
-          </div>
-
-          <div className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-xl text-emerald-700">
-              ↑
-            </div>
-
-            <h2 className="text-sm font-semibold">Drop photos here</h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Or tap Browse to add photos
-            </p>
-
-            <button className="mt-4 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">
-              Browse files
-            </button>
-
-            <div className="mt-4 flex justify-center gap-2 text-[10px] text-slate-500">
-              <span className="rounded bg-white px-2 py-1">JPG</span>
-              <span className="rounded bg-white px-2 py-1">PNG</span>
-              <span className="rounded bg-white px-2 py-1">HEIC</span>
-              <span className="px-2 py-1">≤20MB</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Selected Stop */}
-        <section className="rounded-2xl bg-emerald-50 p-3">
-          <p className="text-sm font-semibold">Flinders St / Elizabeth St</p>
-          <p className="text-xs text-slate-500">
-            Stop 1 · Routes 70, 75 · CBD
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
+            Stop to scan
           </p>
+          {stopName ? (
+            <>
+              <p className="text-base font-bold text-slate-900 dark:text-white">{stopName}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 capitalize mt-0.5">{stopMode} stop</p>
+            </>
+          ) : (
+            <p className="text-sm italic text-slate-400 dark:text-slate-500">No stop selected</p>
+          )}
+          <a href="/m-map" className="block mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            {stopName ? "Change stop →" : "Choose a stop on the map →"}
+          </a>
+        </div>
 
-          <span className="mt-2 inline-block rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-emerald-700">
-            Selected stop
-          </span>
-        </section>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="relative bg-emerald-700 rounded-2xl py-6 text-center text-white cursor-pointer block">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              onChange={(e) => { handleFiles(e.currentTarget.files); e.currentTarget.value = ""; }}
+            />
+            <p className="text-sm font-bold">Camera</p>
+            <p className="text-xs opacity-70 mt-0.5">Take photo</p>
+          </label>
+          <label className="relative bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl py-6 text-center cursor-pointer block">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              onChange={(e) => { handleFiles(e.currentTarget.files); e.currentTarget.value = ""; }}
+            />
+            <p className="text-sm font-bold text-slate-900 dark:text-white">Gallery</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Choose photos</p>
+          </label>
+        </div>
 
-        {/* Checklist */}
-        <section>
-          <h3 className="mb-3 text-sm font-semibold">What to photograph</h3>
+        {files.length > 0 && (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
+              {files.length} photo{files.length > 1 ? "s" : ""} selected
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {files.map((file, i) => (
+                <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                  <img src={previews[i]} alt={file.name} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removeFile(i)}
+                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs font-bold flex items-center justify-center"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-          <div className="space-y-3">
-            {checklist.map((item) => (
-              <div
-                key={item[0]}
-                className="flex gap-3 rounded-2xl border border-slate-200 p-3"
-              >
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
+            What to photograph
+          </p>
+          <div className="flex flex-col gap-2">
+            {CHECKLIST.map(({ label, hint }, i) => {
+              const done = i < files.length;
+              return (
                 <div
-                  className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-md text-xs ${
-                    item[2]
-                      ? "bg-emerald-700 text-white"
-                      : "border border-slate-300 bg-white"
+                  key={label}
+                  className={`flex gap-3 rounded-xl p-3 ${
+                    done
+                      ? "bg-emerald-50 dark:bg-emerald-950"
+                      : "bg-slate-50 dark:bg-slate-800"
                   }`}
                 >
-                  {item[2] ? "✓" : ""}
+                  <div className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${
+                    done
+                      ? "bg-emerald-700 text-white"
+                      : "border border-slate-300 dark:border-slate-600 text-transparent"
+                  }`}>
+                    ✓
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{label}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{hint}</p>
+                  </div>
                 </div>
-
-                <div>
-                  <p className="text-sm font-medium">{item[0]}</p>
-                  <p className="text-xs text-slate-500">{item[1]}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </section>
+        </div>
 
-        {/* Button */}
-        <section className="space-y-2 pb-6">
-          <button className="w-full rounded-2xl bg-emerald-700 py-3 text-sm font-semibold text-white">
-            Analyse photos
-          </button>
-
-          <p className="text-center text-xs text-slate-500">
-            AI checks all 5 accessibility criteria
+        {error && (
+          <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+            {error}
           </p>
-        </section>
-      </div>
+        )}
 
-      {/* Bottom Nav */}
-      <nav className="grid grid-cols-4 border-t bg-white py-3 text-center text-[11px]">
-        <div className="text-slate-500">Map</div>
-        <div className="font-medium text-emerald-700">Scan</div>
-        <div className="text-slate-500">Reports</div>
-        <div className="text-slate-500">Profile</div>
-      </nav>
-    </main>
+        {status && (
+          <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
+            <div className="w-4 h-4 rounded-full border-2 border-emerald-700 border-t-transparent animate-spin flex-shrink-0" />
+            <p className="text-sm text-emerald-700 dark:text-emerald-400">{status}</p>
+          </div>
+        )}
+
+        <button
+          onClick={analyse}
+          disabled={loading || files.length === 0}
+          className={`w-full rounded-2xl py-4 text-base font-bold text-white ${
+            loading || files.length === 0
+              ? "bg-slate-300 dark:bg-slate-700 cursor-not-allowed"
+              : "bg-emerald-700 active:bg-emerald-800"
+          }`}
+        >
+          {loading
+            ? "Analysing..."
+            : files.length > 0
+            ? `Generate report from ${files.length} photo${files.length > 1 ? "s" : ""}`
+            : "Add photos to generate report"}
+        </button>
+
+        <p className="text-center text-xs text-slate-400 dark:text-slate-500">
+          AI checks against DSAPT accessibility criteria
+        </p>
+
+      </main>
+
+      <BottomNav items={NAV} active="/m-scan" />
+    </div>
+  );
+}
+
+export default function ScanPage() {
+  return (
+    <Suspense>
+      <ScanContent />
+    </Suspense>
   );
 }
