@@ -111,7 +111,6 @@ function ScanContent() {
   return (
     <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
 
-      {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">Scan Stop</h1>
@@ -127,7 +126,6 @@ function ScanContent() {
 
       <main className="flex flex-col gap-3 p-4 pb-24">
 
-        {/* Stop info */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
             Stop to scan
@@ -145,7 +143,6 @@ function ScanContent() {
           </a>
         </div>
 
-        {/* Camera / Gallery */}
         <div className="grid grid-cols-2 gap-3">
           <label className="relative bg-emerald-700 rounded-2xl py-6 text-center text-white cursor-pointer block">
             <input
@@ -171,7 +168,6 @@ function ScanContent() {
           </label>
         </div>
 
-        {/* Previews */}
         {files.length > 0 && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
@@ -193,7 +189,6 @@ function ScanContent() {
           </div>
         )}
 
-        {/* Checklist */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
             What to photograph
@@ -227,14 +222,12 @@ function ScanContent() {
           </div>
         </div>
 
-        {/* Error */}
         {error && (
           <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
             {error}
           </p>
         )}
 
-        {/* Loading status */}
         {status && (
           <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
             <div className="w-4 h-4 rounded-full border-2 border-emerald-700 border-t-transparent animate-spin flex-shrink-0" />
@@ -242,7 +235,6 @@ function ScanContent() {
           </div>
         )}
 
-        {/* Analyse button */}
         <button
           onClick={analyse}
           disabled={loading || files.length === 0}
