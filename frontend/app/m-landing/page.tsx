@@ -19,7 +19,6 @@ export default function LandingPage() {
   return (
     <div className="min-h-dvh bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
 
-      {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white">MyAccess</h1>
@@ -35,7 +34,6 @@ export default function LandingPage() {
 
       <main className="flex flex-col gap-4 p-4 pb-10">
 
-        {/* Hero */}
         <div className="bg-emerald-700 rounded-2xl p-6 text-white">
           <p className="text-xs font-semibold opacity-80 uppercase tracking-wider mb-2">
             Accessibility audit tool
@@ -56,7 +54,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* How it works */}
         <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
           <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4">How it works</h3>
           <div className="flex flex-col gap-4">
@@ -74,7 +71,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3">
           {STATS.map((f) => (
             <div key={f.title} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
@@ -84,7 +80,6 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* CTA */}
         <a href="/m-login" className="block w-full bg-emerald-700 text-white font-bold text-base text-center py-4 rounded-2xl">
           Sign in to start scanning
         </a>
