@@ -14,7 +14,6 @@ export default function RegisterPage() {
     if (!email.trim())         { setError("Please enter your email.");            return; }
     if (password.length < 8)   { setError("Password must be at least 8 characters."); return; }
     if (password !== confirm)  { setError("Passwords do not match.");             return; }
-    // In production this would hit the auth endpoint
     window.location.href = "/m-home";
   }
 
@@ -22,7 +21,6 @@ export default function RegisterPage() {
     <div className="min-h-dvh bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-5">
       <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg overflow-hidden">
 
-        {/* Logo */}
         <div className="flex flex-col items-center px-8 pt-12 pb-6 text-center">
           <div className="w-16 h-16 bg-emerald-700 rounded-2xl flex items-center justify-center shadow-md">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -40,7 +38,6 @@ export default function RegisterPage() {
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Join the MyAccess community</p>
         </div>
 
-        {/* Form */}
         <div className="flex flex-col gap-4 px-8 pb-10">
 
           <div className="flex flex-col gap-1.5">
