@@ -1,7 +1,7 @@
 "use client";
 
 import { ThemeToggle, BottomNav, StatusBadge } from "../shared";
-import rawStops from "../map/real-stops.json";
+import rawStops from "../data/stops.json";
 
 type Stop = {
   id: string;

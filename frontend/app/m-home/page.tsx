@@ -1,7 +1,7 @@
 "use client";
 
 import { ThemeToggle, BottomNav, StatusBadge } from "../shared";
-import rawStops from "../map/real-stops.json";
+import rawStops from "../data/stops.json";
 
 type Stop = {
   id: string;
@@ -43,7 +43,6 @@ export default function HomePage() {
   return (
     <div className="min-h-dvh bg-slate-50 dark:bg-slate-950">
 
-      {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
         <div>
           <p className="text-xs text-slate-400 dark:text-slate-500">Good morning</p>
@@ -59,7 +58,6 @@ export default function HomePage() {
 
       <main className="flex flex-col gap-3 p-4 pb-24">
 
-        {/* Score card */}
         <div className="bg-emerald-700 rounded-2xl p-5 text-white">
           <p className="text-xs font-semibold uppercase tracking-widest opacity-75 mb-1">
             Accessibility Score Nearby
@@ -68,7 +66,6 @@ export default function HomePage() {
           <p className="text-sm opacity-70">{scoreLabel} · {NEARBY.length} stops nearby</p>
         </div>
 
-        {/* Map preview */}
         <a
           href="/m-map"
           className="relative block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 h-40"
@@ -86,7 +83,6 @@ export default function HomePage() {
           </div>
         </a>
 
-        {/* Scan CTA */}
         <a
           href="/m-scan"
           className="flex items-center justify-between bg-emerald-700 rounded-2xl p-5 text-white"
@@ -101,7 +97,6 @@ export default function HomePage() {
           </svg>
         </a>
 
-        {/* Quick links */}
         <div className="grid grid-cols-2 gap-3">
           <a
             href="/m-saved"
@@ -119,7 +114,6 @@ export default function HomePage() {
           </a>
         </div>
 
-        {/* Nearby stops */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">
             Nearby stops
