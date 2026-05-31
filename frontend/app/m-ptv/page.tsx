@@ -72,6 +72,7 @@ function priorityChip(p: string) {
 }
 
 function StopReportDetail({ report, onClose }: { report: StopReport; onClose: () => void }) {
+  const [action, setAction] = useState<string | null>(null);
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-950">
       <header className="flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-5 py-4">
@@ -97,9 +98,14 @@ function StopReportDetail({ report, onClose }: { report: StopReport; onClose: ()
             </div>
           ))}
         </div>
-        <button className="w-full bg-emerald-700 text-white font-bold text-sm py-4 rounded-2xl">Mark as resolved</button>
-        <button className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-4 rounded-2xl">Schedule maintenance</button>
-        <button className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-4 rounded-2xl">Escalate to council</button>
+        {action && (
+          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
+            {action}
+          </p>
+        )}
+        <button onClick={() => setAction("Report marked as resolved.")} className="w-full bg-emerald-700 text-white font-bold text-sm py-4 rounded-2xl active:bg-emerald-800">Mark as resolved</button>
+        <button onClick={() => setAction("Maintenance scheduled for this stop.")} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-4 rounded-2xl">Schedule maintenance</button>
+        <button onClick={() => setAction("Report escalated to council.")} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-4 rounded-2xl">Escalate to council</button>
       </div>
     </div>
   );
