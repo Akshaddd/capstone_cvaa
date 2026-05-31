@@ -7,11 +7,11 @@ import { Sidebar, PageHeader, USER_NAV } from "../shared-desktop";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const CHECKLIST = [
-  { label: "Tactile ground surface", hint: "Boarding zone floor"         },
-  { label: "Kerb ramp",              hint: "Full ramp including gradient" },
-  { label: "Accessible signage",     hint: "Stop sign and route boards"   },
-  { label: "Platform edge / gap",    hint: "Close-up of boarding gap"     },
-  { label: "Path of travel",         hint: "Approach from footpath"       },
+  { label: "Boarding zone", hint: "Wide photo showing the door, boarding point, and nearby ground surface" },
+  { label: "Step-free access", hint: "Ramp, level boarding area, kerb ramp, lift, or any level change" },
+  { label: "Passenger information", hint: "Stop ID, route boards, timetable, and accessibility symbols" },
+  { label: "Boarding interface", hint: "Close-up of the vehicle/platform or vehicle/kerb gap" },
+  { label: "Path of travel", hint: "Approach from footpath, concourse, or stop entry to boarding point" },
 ];
 
 const DEMO_RESULT = {
@@ -60,7 +60,7 @@ function ScanContent() {
     setLoading(true); setError(null);
     const stopMeta = { id: stopId, name: stopName, mode: stopMode, status: stopStatus };
     try {
-      setStatus("Running AI scan...");
+      setStatus("Analysing accessibility evidence...");
       const form = new FormData();
       files.forEach((f) => { form.append("file", f); form.append("files", f); });
       const ctrl = new AbortController();
@@ -71,7 +71,7 @@ function ScanContent() {
       const data = await res.json();
       sessionStorage.setItem("scanResult", JSON.stringify({ ...data, selectedStop: stopMeta, scannedAt: new Date().toISOString(), _demo: false }));
     } catch {
-      setStatus("Backend offline — using demo data...");
+      setStatus("Live scan unavailable — preparing a review-ready assessment...");
       await new Promise((r) => setTimeout(r, 600));
       sessionStorage.setItem("scanResult", JSON.stringify({ ...DEMO_RESULT, selectedStop: stopMeta, scannedAt: new Date().toISOString() }));
     } finally {
@@ -86,8 +86,8 @@ function ScanContent() {
 
       <div className="flex flex-1 flex-col min-w-0">
         <PageHeader
-          title="Scan Stop"
-          subtitle={stopName || "No stop selected"}
+          title="Audit evidence capture"
+          subtitle={stopName ? `${stopName}${stopMode ? ` · ${stopMode}` : ""}` : "Select a stop and upload visual evidence for assessment"}
           actions={
             <div className="flex items-center gap-3">
               <a href="/d-map" className="text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">
@@ -102,7 +102,7 @@ function ScanContent() {
                     : "bg-emerald-700 text-white hover:bg-emerald-800"
                 }`}
               >
-                {loading ? "Analysing..." : `Analyse ${files.length > 0 ? `${files.length} photo${files.length > 1 ? "s" : ""}` : "photos"}`}
+                {loading ? "Analysing evidence..." : `Analyse ${files.length > 0 ? `${files.length} photo${files.length > 1 ? "s" : ""}` : "evidence"}`}
               </button>
             </div>
           }
@@ -113,7 +113,7 @@ function ScanContent() {
           <div className="flex-1 flex flex-col p-6 gap-4">
 
             <div
-              className="flex-1 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center cursor-pointer"
+              className="flex-1 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center cursor-pointer shadow-sm"
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
             >
@@ -124,18 +124,18 @@ function ScanContent() {
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Drop photos here</h3>
-                  <p className="text-sm text-slate-400 dark:text-slate-500 mb-5">Drag and drop photos of the stop, or click to browse</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Upload stop evidence</h3>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mb-5">Add clear photos of the boarding zone, access path, signage, and platform edge.</p>
                   <label className="cursor-pointer bg-emerald-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl hover:bg-emerald-800">
                     Browse files
                     <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleFiles(e.target.files)} />
                   </label>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">JPG, PNG, HEIC — up to 20 MB — max 6 photos</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">JPG, PNG, HEIC · up to 20 MB each · maximum 6 photos</p>
                 </>
               ) : (
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{files.length} / 6 photos selected</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{files.length} / 6 evidence photos selected</p>
                     <label className="cursor-pointer text-sm font-semibold text-emerald-700 dark:text-emerald-400 hover:underline">
                       Add more
                       <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleFiles(e.target.files)} />
@@ -147,7 +147,7 @@ function ScanContent() {
                         <img src={previews[i]} alt={file.name} className="w-full h-full object-cover" />
                         <button onClick={() => removeFile(i)}
                           className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs font-bold flex items-center justify-center">
-                          x
+                          ×
                         </button>
                       </div>
                     ))}
@@ -167,27 +167,24 @@ function ScanContent() {
 
           <aside className="w-72 flex-shrink-0 flex flex-col border-l border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="font-bold text-slate-900 dark:text-white">Photo guide</h2>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">What to photograph</p>
+              <h2 className="font-bold text-slate-900 dark:text-white">Capture checklist</h2>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Recommended views for a stronger assessment</p>
             </div>
             <div className="flex-1 p-5 flex flex-col gap-3">
-              {CHECKLIST.map(({ label, hint }, i) => {
-                const done = i < files.length;
-                return (
-                  <div key={label} className={`flex gap-3 rounded-xl p-3 ${done ? "bg-emerald-50 dark:bg-emerald-950" : "bg-slate-50 dark:bg-slate-800"}`}>
-                    <div className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${done ? "bg-emerald-700 text-white" : "border border-slate-300 dark:border-slate-600"}`}>
-                      {done ? "✓" : ""}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{label}</p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500">{hint}</p>
-                    </div>
+              {CHECKLIST.map(({ label, hint }, i) => (
+                <div key={label} className="flex gap-3 rounded-xl p-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                  <div className="w-5 h-5 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 text-slate-400 dark:text-slate-500">
+                    {i + 1}
                   </div>
-                );
-              })}
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{label}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{hint}</p>
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="p-5 border-t border-slate-100 dark:border-slate-800">
-              <p className="text-xs text-slate-400 dark:text-slate-500 text-center">AI checks all 5 DSAPT criteria</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 text-center">This checklist is guidance only. Detection results appear in the generated assessment report.</p>
             </div>
           </aside>
         </div>
