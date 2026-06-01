@@ -3,11 +3,11 @@
 import { ThemeToggle } from "../shared-desktop";
 
 const TEAM = [
-  { name: "Pasan Jayarathna",  id: "21963056", role: "Risk Manager · Backend Dev",          initials: "PJ" },
-  { name: "Akshad Shelar",     id: "22021511", role: "Compliance · Backend Dev",             initials: "AK" },
-  { name: "Pragna Guruprasad", id: "22282648", role: "Figma Designer · Frontend Dev",        initials: "PR" },
-  { name: "Nadil Silva",       id: "21963139", role: "ML Engineer · Backend Dev",            initials: "NA" },
-  { name: "Rui Hong Gan",      id: "22091871", role: "Security Engineer · Frontend Dev",     initials: "RU" },
+  { name: "Pasan Jayarathna",  id: "21963056", role: "Risk Manager · Backend Dev",      initials: "PJ", img: "/team/PJ.png" },
+  { name: "Akshad Shelar",     id: "22021511", role: "Compliance · Backend Dev",         initials: "AK", img: "/team/akshad.jpg" },
+  { name: "Pragna Guruprasad", id: "22282648", role: "Figma Designer · Frontend Dev",    initials: "PR", img: "/team/pragna.jpg" },
+  { name: "Nadil Silva",       id: "21963139", role: "ML Engineer · Backend Dev",        initials: "NA", img: "/team/nadil.jpg" },
+  { name: "Rui Hong Gan",      id: "22091871", role: "Security Engineer · Frontend Dev", initials: "RU", img: "/team/rui.jpg" },
 ];
 
 const TECH = [
