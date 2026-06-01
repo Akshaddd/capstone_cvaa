@@ -53,7 +53,7 @@ function ScanContent() {
     const valid = Array.from(list).filter((f) => f.type.startsWith("image/") && f.size <= 20 * 1024 * 1024);
     if (!valid.length) { setError("Please choose an image under 20 MB."); return; }
     const next = [...files, ...valid].slice(0, 6);
-    previews.forEach(URL.revokeObjectURL);
+    previews.forEach((url) => URL.revokeObjectURL(url));
     setFiles(next);
     setPreviews(next.map((f) => URL.createObjectURL(f)));
     setError(null);
@@ -61,7 +61,7 @@ function ScanContent() {
 
   function removeFile(i: number) {
     const next = files.filter((_, j) => j !== i);
-    previews.forEach(URL.revokeObjectURL);
+    previews.forEach((url) => URL.revokeObjectURL(url));
     setFiles(next);
     setPreviews(next.map((f) => URL.createObjectURL(f)));
   }
@@ -70,6 +70,7 @@ function ScanContent() {
     if (!files.length) { setError("Add at least one photo first."); return; }
     setLoading(true); setError(null);
     const stopMeta = { id: stopId, name: stopName, mode: stopMode, status: stopStatus };
+    const evidenceImages = [...previews];
     try {
       setStatus("Analysing accessibility evidence...");
       const form = new FormData();
@@ -83,6 +84,10 @@ function ScanContent() {
       const measurementPayload = getMeasurementPayload(data);
       sessionStorage.setItem("scanResult", JSON.stringify({
         ...data,
+        uploadedImage: evidenceImages[0],
+        uploadedImages: evidenceImages,
+        previewUrl: evidenceImages[0],
+        evidenceImages,
         measurements: measurementPayload,
         measurement: measurementPayload,
         depth: measurementPayload,
@@ -99,6 +104,10 @@ function ScanContent() {
       await new Promise((r) => setTimeout(r, 600));
       sessionStorage.setItem("scanResult", JSON.stringify({
         ...DEMO_RESULT,
+        uploadedImage: evidenceImages[0],
+        uploadedImages: evidenceImages,
+        previewUrl: evidenceImages[0],
+        evidenceImages,
         measurements: null,
         measurement: null,
         depth: null,

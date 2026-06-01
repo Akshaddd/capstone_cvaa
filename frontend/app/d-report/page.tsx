@@ -107,6 +107,18 @@ interface ScanResult {
   detections?: Detection[]; _demo?: boolean;
   selectedStop?: { id?: string; name?: string; mode?: string; status?: string };
   scannedAt?: string;
+  imageUrl?: string;
+  image_url?: string;
+  uploadedImage?: string;
+  uploaded_image?: string;
+  previewUrl?: string;
+  preview_url?: string;
+  filePreview?: string;
+  original_image_path?: string;
+  boxed_image_path?: string;
+  images?: string[];
+  evidenceImages?: string[];
+  uploadedImages?: string[];
   measurements?: MeasurementResult;
   measurement?: MeasurementResult;
   depth?: MeasurementResult;
@@ -330,6 +342,52 @@ function getMeasurementResult(scan: ScanResult | null): MeasurementResult | null
   };
 }
 
+function normaliseImagePath(path: unknown) {
+  if (typeof path !== "string" || !path.trim()) return null;
+  const value = path.trim();
+
+  if (value.startsWith("data:") || value.startsWith("blob:") || value.startsWith("http://") || value.startsWith("https://")) return value;
+  if (value.startsWith("/")) return value;
+  if (value.startsWith("outputs/")) return `http://127.0.0.1:8000/${value}`;
+
+  return value;
+}
+
+function getEvidenceImages(scan: ScanResult | null) {
+  const originalCandidates = [
+    scan?.imageUrl,
+    scan?.image_url,
+    scan?.uploadedImage,
+    scan?.uploaded_image,
+    scan?.previewUrl,
+    scan?.preview_url,
+    scan?.filePreview,
+    scan?.original_image_path,
+    ...(Array.isArray(scan?.images) ? scan.images : []),
+    ...(Array.isArray(scan?.evidenceImages) ? scan.evidenceImages : []),
+    ...(Array.isArray(scan?.uploadedImages) ? scan.uploadedImages : []),
+  ];
+
+  const boxedFallbackCandidates = [scan?.boxed_image_path];
+
+  const normaliseList = (items: unknown[]) => {
+    const seen = new Set<string>();
+    return items
+      .map(normaliseImagePath)
+      .filter((src): src is string => Boolean(src))
+      .filter((src) => {
+        if (seen.has(src)) return false;
+        seen.add(src);
+        return true;
+      });
+  };
+
+  const originals = normaliseList(originalCandidates);
+  if (originals.length > 0) return originals;
+
+  return normaliseList(boxedFallbackCandidates);
+}
+
 
 function formatMeasurementValue(value: unknown) {
   if (typeof value === "number") return value.toFixed(value >= 10 ? 1 : 2);
@@ -502,6 +560,53 @@ function ExperimentalMeasurementPanel({ measurement }: { measurement: Measuremen
   );
 }
 
+function EvidencePanel({ images, scannedAt, stopName }: { images: string[]; scannedAt?: string; stopName: string }) {
+  const hasImages = images.length > 0;
+  const capturedAt = scannedAt
+    ? new Date(scannedAt).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+    : "Current assessment";
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Uploaded evidence</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{hasImages ? `${images.length} image${images.length === 1 ? "" : "s"} used for this assessment` : "No preview image available"}</p>
+        </div>
+        <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Evidence</span>
+      </div>
+
+      {hasImages ? (
+        <div className="space-y-3">
+          <a href={images[0]} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+            <img src={images[0]} alt={`Uploaded audit evidence for ${stopName}`} className="h-56 w-full object-cover transition-transform duration-200 hover:scale-[1.02]" />
+          </a>
+
+          {images.length > 1 && (
+            <div className="grid grid-cols-3 gap-2">
+              {images.slice(1, 4).map((src, index) => (
+                <a key={src} href={src} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                  <img src={src} alt={`Additional uploaded evidence ${index + 2}`} className="h-20 w-full object-cover" />
+                </a>
+              ))}
+            </div>
+          )}
+
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Evidence metadata</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Captured for <span className="font-semibold text-slate-700 dark:text-slate-300">{stopName}</span> · {capturedAt}. Used as visual evidence for DSAPT-linked observations and passenger impact estimates.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-5 text-center">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Evidence image not stored in this session</p>
+          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">The report can still show AI findings, but saving the uploaded image preview improves audit traceability.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DesktopReportPage() {
   const [scan,    setScan]    = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -570,6 +675,7 @@ export default function DesktopReportPage() {
     : "No issues were flagged across the checked visual indicators. Operator verification is still recommended before confirming compliance.";
 
   const measurement = getMeasurementResult(scan);
+  const evidenceImages = getEvidenceImages(scan);
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -643,21 +749,25 @@ export default function DesktopReportPage() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Passenger impact estimate</p>
-            <div className="flex flex-col gap-2">
-              {profile.map((g) => (
-                <div key={g.label} className={`rounded-xl p-3 ${g.suitable ? "bg-emerald-50 dark:bg-emerald-950" : "bg-red-50 dark:bg-red-950"}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{g.label}</p>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${g.suitable ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
-                      {g.suitable ? "Likely supported" : "Review needed"}
-                    </span>
+          <div className="flex flex-col gap-5">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3">Passenger impact estimate</p>
+              <div className="flex flex-col gap-2">
+                {profile.map((g) => (
+                  <div key={g.label} className={`rounded-xl p-3 ${g.suitable ? "bg-emerald-50 dark:bg-emerald-950" : "bg-red-50 dark:bg-red-950"}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{g.label}</p>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${g.suitable ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" : "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"}`}>
+                        {g.suitable ? "Likely supported" : "Review needed"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{g.reason}</p>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{g.reason}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+
+            <EvidencePanel images={evidenceImages} scannedAt={scan?.scannedAt} stopName={stopName} />
           </div>
 
         </main>
