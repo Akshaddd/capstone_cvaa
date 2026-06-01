@@ -11,6 +11,7 @@
   "dependencies": {
     "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
+    "html2pdf.js": "^0.10.3",
     "lightningcss": "^1.32.0",
     "lucide-react": "^1.7.0",
     "next": "16.2.2",

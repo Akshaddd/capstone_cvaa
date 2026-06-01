@@ -107,6 +107,7 @@ interface ScanResult {
   detections?: Detection[]; _demo?: boolean;
   selectedStop?: { id?: string; name?: string; mode?: string; status?: string };
   scannedAt?: string;
+  originalEvidenceImage?: string;
   imageUrl?: string;
   image_url?: string;
   uploadedImage?: string;
@@ -355,13 +356,14 @@ function normaliseImagePath(path: unknown) {
 
 function getEvidenceImages(scan: ScanResult | null) {
   const originalCandidates = [
-    scan?.imageUrl,
-    scan?.image_url,
+    scan?.originalEvidenceImage,
     scan?.uploadedImage,
     scan?.uploaded_image,
     scan?.previewUrl,
     scan?.preview_url,
     scan?.filePreview,
+    scan?.imageUrl,
+    scan?.image_url,
     scan?.original_image_path,
     ...(Array.isArray(scan?.images) ? scan.images : []),
     ...(Array.isArray(scan?.evidenceImages) ? scan.evidenceImages : []),
@@ -393,6 +395,13 @@ function formatMeasurementValue(value: unknown) {
   if (typeof value === "number") return value.toFixed(value >= 10 ? 1 : 2);
   if (typeof value === "string" && value.trim()) return value;
   return "Not available";
+}
+
+function getPdfImageFormat(src: string) {
+  const lower = src.slice(0, 40).toLowerCase();
+  if (lower.includes("image/png")) return "PNG";
+  if (lower.includes("image/webp")) return "WEBP";
+  return "JPEG";
 }
 
 function getFlexibleMeasurementRows(measurement: MeasurementResult | null) {
@@ -607,6 +616,159 @@ function EvidencePanel({ images, scannedAt, stopName }: { images: string[]; scan
   );
 }
 
+
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function buildPrintableReportHtml({
+  stopName,
+  stopMode,
+  reportId,
+  assessmentMode,
+  score,
+  overallLabel,
+  plainSummary,
+  passed,
+  warnings,
+  failed,
+  deduped,
+  profile,
+  measurement,
+  evidenceImages,
+}: {
+  stopName: string;
+  stopMode: string;
+  reportId: string;
+  assessmentMode: string;
+  score: number;
+  overallLabel: string;
+  plainSummary: string;
+  passed: number;
+  warnings: number;
+  failed: number;
+  deduped: Detection[];
+  profile: Array<{ label: string; suitable: boolean; reason: string }>;
+  measurement: MeasurementResult | null;
+  evidenceImages: string[];
+}) {
+  const generatedAt = new Date().toLocaleString();
+  const evidenceImage = evidenceImages[0];
+  const measurementRows = getFlexibleMeasurementRows(measurement);
+
+  const observationRows = deduped.map((d) => {
+    const entry = getEntry(d.class);
+    const status = getStatus(d.confidence, d.class);
+    const confidence = Math.round(d.confidence * 100);
+    const finding = d.inferredMissing
+      ? "This evidence item was not confirmed in the uploaded image and should be checked manually."
+      : status === "Detected"
+        ? entry.passNote
+        : entry.failNote;
+
+    return `
+      <tr>
+        <td>${escapeHtml(entry.name)}</td>
+        <td>${escapeHtml(entry.clause)}</td>
+        <td>${escapeHtml(severityLabel(entry.severity))}</td>
+        <td>${escapeHtml(status)}</td>
+        <td>${confidence}%</td>
+        <td>${escapeHtml(finding)}</td>
+        <td>${escapeHtml(d.inferredMissing ? "Capture an additional clear photo focused on this feature before confirming accessibility status." : entry.action)}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const passengerRows = profile.map((item) => `
+    <tr>
+      <td>${escapeHtml(item.label)}</td>
+      <td>${item.suitable ? "Likely supported" : "Review needed"}</td>
+      <td>${escapeHtml(item.reason)}</td>
+    </tr>
+  `).join("");
+
+  const measurementHtml = measurementRows.length > 0
+    ? measurementRows.map((row) => `
+        <tr>
+          <td>${escapeHtml(row.label)}</td>
+          <td>${escapeHtml(formatMeasurementValue(row.value))} ${escapeHtml(row.unit)}</td>
+        </tr>
+      `).join("")
+    : `<tr><td colspan="2">${escapeHtml(summariseUnknownMeasurements(measurement) ?? "No stable calibrated measurement values were returned. Manual verification is required before compliance decisions.")}</td></tr>`;
+
+  return `
+<div id="myaccess-pdf-report">
+  <style>
+    #myaccess-pdf-report { width: 794px; min-height: 1123px; background: #ffffff; padding: 48px; box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; color: #0f172a; line-height: 1.45; }
+    .header { border-bottom: 3px solid #047857; padding-bottom: 14px; margin-bottom: 18px; }
+    .brand { color: #047857; font-weight: 800; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; }
+    h1 { font-size: 24px; margin: 6px 0 4px; }
+    h2 { font-size: 15px; margin: 22px 0 8px; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+    .meta { color: #475569; font-size: 12px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+    .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #f8fafc; }
+    .label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: .06em; }
+    .value { font-size: 20px; font-weight: 800; margin-top: 3px; }
+    .summary { border-left: 4px solid #047857; background: #ecfdf5; padding: 12px; border-radius: 8px; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
+    th { background: #f1f5f9; color: #334155; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+    th, td { border: 1px solid #e2e8f0; padding: 7px; vertical-align: top; }
+    .evidence { max-width: 100%; max-height: 260px; border: 1px solid #e2e8f0; border-radius: 10px; object-fit: contain; margin-top: 8px; }
+    .note { font-size: 10px; color: #64748b; margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+  </style>
+  <div class="header">
+    <div class="brand">MyAccess · Accessibility Audit Tool</div>
+    <h1>Accessibility Assessment Report</h1>
+    <div class="meta">${escapeHtml(stopName)} · ${escapeHtml(stopMode)} stop · ${escapeHtml(reportId)} · ${escapeHtml(assessmentMode)} · Generated ${escapeHtml(generatedAt)}</div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="card"><div class="label">Overall score</div><div class="value">${score}</div></div>
+    <div class="card"><div class="label">Status</div><div class="value" style="font-size:15px">${escapeHtml(overallLabel)}</div></div>
+    <div class="card"><div class="label">Detected</div><div class="value">${passed}</div></div>
+    <div class="card"><div class="label">Needs review / not detected</div><div class="value">${warnings + failed}</div></div>
+  </div>
+
+  <h2>Executive summary</h2>
+  <div class="summary">${escapeHtml(plainSummary)}</div>
+
+  <h2>DSAPT-linked observations</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th><th>DSAPT indicator</th><th>Priority</th><th>Status</th><th>Confidence</th><th>Finding</th><th>Recommended action</th>
+      </tr>
+    </thead>
+    <tbody>${observationRows}</tbody>
+  </table>
+
+  <h2>Passenger impact estimate</h2>
+  <table>
+    <thead><tr><th>Passenger group</th><th>Assessment</th><th>Reason</th></tr></thead>
+    <tbody>${passengerRows}</tbody>
+  </table>
+
+  <h2>Experimental measurement support</h2>
+  <table>
+    <thead><tr><th>Measurement</th><th>Estimate</th></tr></thead>
+    <tbody>${measurementHtml}</tbody>
+  </table>
+
+  <h2>Uploaded evidence</h2>
+  ${evidenceImage ? `<img class="evidence" src="${escapeHtml(evidenceImage)}" alt="Uploaded audit evidence" />` : `<p>No uploaded evidence preview was available in this session.</p>`}
+
+  <div class="note">
+    This report is generated from AI-supported visual assessment and selected DSAPT-linked indicators. It is not a final legal compliance verdict. Findings, measurements, and passenger impact estimates must be verified by a qualified reviewer before remediation or formal compliance decisions.
+  </div>
+</div>
+  `;
+}
+
 function readCurrentRole(): "operator" | "compliance" | "council" {
   if (typeof window === "undefined") return "operator";
 
@@ -694,6 +856,229 @@ export default function DesktopReportPage() {
   const measurement = getMeasurementResult(scan);
   const evidenceImages = getEvidenceImages(scan);
 
+  async function getExportSafeEvidenceImage() {
+    const direct = evidenceImages.find((src) => src.startsWith("data:image"));
+    if (direct) return direct;
+
+    const imageElement = document.querySelector<HTMLImageElement>('img[alt^="Uploaded audit evidence"]');
+    if (!imageElement) return null;
+
+    return new Promise<string | null>((resolve) => {
+      try {
+        const canvas = document.createElement("canvas");
+        const width = imageElement.naturalWidth || imageElement.width;
+        const height = imageElement.naturalHeight || imageElement.height;
+
+        if (!width || !height) {
+          resolve(null);
+          return;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+
+        ctx.drawImage(imageElement, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+
+  async function exportReportAsPdf() {
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      const exportSafeEvidenceImage = await getExportSafeEvidenceImage();
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 42;
+      const contentWidth = pageWidth - margin * 2;
+      let y = margin;
+
+      const checkPage = (needed = 40) => {
+        if (y + needed > pageHeight - margin) {
+          pdf.addPage();
+          y = margin;
+        }
+      };
+
+      const addText = (text: string, x: number, fontSize = 10, style: "normal" | "bold" = "normal", maxWidth = contentWidth, lineGap = 4) => {
+        pdf.setFont("helvetica", style);
+        pdf.setFontSize(fontSize);
+        const lines = pdf.splitTextToSize(text, maxWidth);
+        checkPage(lines.length * (fontSize + lineGap));
+        pdf.text(lines, x, y);
+        y += lines.length * (fontSize + lineGap);
+      };
+
+      const addSection = (title: string) => {
+        checkPage(50);
+        y += 10;
+        pdf.setDrawColor(226, 232, 240);
+        pdf.line(margin, y, pageWidth - margin, y);
+        y += 18;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(13);
+        pdf.setTextColor(15, 23, 42);
+        pdf.text(title, margin, y);
+        y += 16;
+      };
+
+      const addKeyValue = (label: string, value: string, x: number, boxWidth: number) => {
+        pdf.setFillColor(248, 250, 252);
+        pdf.setDrawColor(226, 232, 240);
+        pdf.roundedRect(x, y, boxWidth, 56, 8, 8, "FD");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(label.toUpperCase(), x + 10, y + 18);
+        pdf.setFontSize(value.length > 12 ? 11 : 18);
+        pdf.setTextColor(15, 23, 42);
+        pdf.text(value, x + 10, y + 42, { maxWidth: boxWidth - 20 });
+      };
+
+      pdf.setTextColor(4, 120, 87);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.text("MYACCESS · ACCESSIBILITY AUDIT TOOL", margin, y);
+      y += 22;
+
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFontSize(22);
+      pdf.text("Accessibility Assessment Report", margin, y);
+      y += 18;
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text(`${stopName} · ${stopMode} stop · ${reportId} · ${assessmentMode}`, margin, y);
+      y += 22;
+
+      pdf.setDrawColor(4, 120, 87);
+      pdf.setLineWidth(2);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 22;
+
+      const boxGap = 8;
+      const boxWidth = (contentWidth - boxGap * 3) / 4;
+      addKeyValue("Overall score", String(score), margin, boxWidth);
+      addKeyValue("Status", overallLabel, margin + (boxWidth + boxGap), boxWidth);
+      addKeyValue("Detected", String(passed), margin + (boxWidth + boxGap) * 2, boxWidth);
+      addKeyValue("Needs review", String(warnings + failed), margin + (boxWidth + boxGap) * 3, boxWidth);
+      y += 76;
+
+      addSection("Executive summary");
+      pdf.setFillColor(236, 253, 245);
+      pdf.setDrawColor(16, 185, 129);
+      const summaryLines = pdf.splitTextToSize(plainSummary, contentWidth - 24);
+      const summaryHeight = Math.max(50, summaryLines.length * 14 + 24);
+      checkPage(summaryHeight);
+      pdf.roundedRect(margin, y, contentWidth, summaryHeight, 8, 8, "FD");
+      pdf.setTextColor(15, 23, 42);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      pdf.text(summaryLines, margin + 12, y + 22);
+      y += summaryHeight + 8;
+
+      addSection("DSAPT-linked observations");
+      deduped.forEach((d) => {
+        const entry = getEntry(d.class);
+        const status = getStatus(d.confidence, d.class);
+        const confidence = Math.round(d.confidence * 100);
+        const finding = d.inferredMissing
+          ? "This evidence item was not confirmed in the uploaded image and should be checked manually."
+          : status === "Detected"
+            ? entry.passNote
+            : entry.failNote;
+        const action = d.inferredMissing
+          ? "Capture an additional clear photo focused on this feature before confirming accessibility status."
+          : entry.action;
+
+        checkPage(105);
+        pdf.setFillColor(248, 250, 252);
+        pdf.setDrawColor(226, 232, 240);
+        pdf.roundedRect(margin, y, contentWidth, 94, 8, 8, "FD");
+        pdf.setTextColor(15, 23, 42);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.text(`${entry.name} · ${entry.clause}`, margin + 12, y + 18);
+        pdf.setFontSize(8);
+        pdf.setTextColor(71, 85, 105);
+        pdf.text(`${severityLabel(entry.severity)} · ${status} · ${confidence}% confidence`, margin + 12, y + 33);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.text(pdf.splitTextToSize(`Finding: ${finding}`, contentWidth - 24), margin + 12, y + 50);
+        pdf.text(pdf.splitTextToSize(`Action: ${action}`, contentWidth - 24), margin + 12, y + 72);
+        y += 106;
+      });
+
+      addSection("Passenger impact estimate");
+      profile.forEach((item) => {
+        checkPage(48);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(15, 23, 42);
+        pdf.setFontSize(10);
+        pdf.text(`${item.label} · ${item.suitable ? "Likely supported" : "Review needed"}`, margin, y);
+        y += 14;
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(71, 85, 105);
+        pdf.text(pdf.splitTextToSize(item.reason, contentWidth), margin, y);
+        y += 28;
+      });
+
+      addSection("Experimental measurement support");
+      const rows = getFlexibleMeasurementRows(measurement);
+      if (rows.length > 0) {
+        rows.forEach((row) => {
+          addText(`${row.label}: ${formatMeasurementValue(row.value)} ${row.unit}`, margin, 9, "normal");
+        });
+      } else {
+        addText(summariseUnknownMeasurements(measurement) ?? "No stable calibrated measurement values were returned. Manual verification is required before compliance decisions.", margin, 9);
+      }
+
+      addSection("Uploaded evidence");
+      if (exportSafeEvidenceImage?.startsWith("data:image")) {
+        try {
+          const imageProps = pdf.getImageProperties(exportSafeEvidenceImage);
+          const maxImageWidth = contentWidth;
+          const maxImageHeight = 300;
+          const widthRatio = maxImageWidth / imageProps.width;
+          const heightRatio = maxImageHeight / imageProps.height;
+          const ratio = Math.min(widthRatio, heightRatio, 1);
+          const imageWidth = imageProps.width * ratio;
+          const imageHeight = imageProps.height * ratio;
+          const imageX = margin + (contentWidth - imageWidth) / 2;
+
+          checkPage(imageHeight + 28);
+          pdf.setDrawColor(226, 232, 240);
+          pdf.roundedRect(imageX - 4, y - 4, imageWidth + 8, imageHeight + 8, 8, 8, "S");
+          pdf.addImage(exportSafeEvidenceImage, getPdfImageFormat(exportSafeEvidenceImage), imageX, y, imageWidth, imageHeight, undefined, "FAST");
+          y += imageHeight + 24;
+        } catch {
+          addText("Uploaded evidence image was captured but could not be embedded in the PDF export.", margin, 9);
+        }
+      } else {
+        addText("Uploaded evidence image was captured in the report view, but the browser could not convert it into a PDF-safe image. Keep the evidence panel visible and export again after a fresh upload.", margin, 9);
+      }
+
+      addSection("Compliance note");
+      addText("This report is generated from AI-supported visual assessment and selected DSAPT-linked indicators. It is not a final legal compliance verdict. Findings, measurements, and passenger impact estimates must be verified by a qualified reviewer before remediation or formal compliance decisions.", margin, 8);
+
+      pdf.save(`${reportId}-accessibility-assessment.pdf`);
+    } catch (error) {
+      console.error("PDF export failed", error);
+      window.alert("PDF export failed. Please try again or use the browser print fallback.");
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <Sidebar nav={nav} active="/d-reports" user={sidebarUser} />
@@ -704,6 +1089,7 @@ export default function DesktopReportPage() {
           subtitle={`${stopMode} stop · ${reportId} · ${assessmentMode}`}
           actions={
             <div className="flex gap-2">
+              <button onClick={exportReportAsPdf} className="text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Download PDF</button>
               <a href="/d-ptv" className="text-sm font-semibold bg-emerald-700 text-white px-4 py-2 rounded-xl hover:bg-emerald-800">Submit to compliance review</a>
               <a href="/d-scan" className="text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Start new assessment</a>
             </div>

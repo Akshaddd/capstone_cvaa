@@ -24,6 +24,7 @@ const DEMO_RESULT = {
   _demo: true,
 };
 
+
 function getMeasurementPayload(data: Record<string, unknown>) {
   return data.measurements
     ?? data.measurement
@@ -33,6 +34,42 @@ function getMeasurementPayload(data: Record<string, unknown>) {
     ?? data.depth_result
     ?? data.measurement_result
     ?? null;
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const img = new Image();
+
+      img.onload = () => {
+        const maxWidth = 1100;
+        const scale = Math.min(1, maxWidth / img.width);
+        const width = Math.round(img.width * scale);
+        const height = Math.round(img.height * scale);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Could not prepare image preview."));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.78));
+      };
+
+      img.onerror = () => reject(new Error("Could not load uploaded image."));
+      img.src = String(reader.result);
+    };
+
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 function readCurrentRole(): "operator" | "compliance" | "council" {
@@ -83,22 +120,34 @@ function ScanContent() {
     ? "Review operator evidence and supporting accessibility indicators"
     : "Select a stop and upload operator evidence for assessment";
 
-  function handleFiles(list: FileList | null) {
+  async function handleFiles(list: FileList | null) {
     if (!list?.length) return;
     const valid = Array.from(list).filter((f) => f.type.startsWith("image/") && f.size <= 20 * 1024 * 1024);
-    if (!valid.length) { setError("Please choose an image under 20 MB."); return; }
-    const next = [...files, ...valid].slice(0, 6);
-    previews.forEach((url) => URL.revokeObjectURL(url));
-    setFiles(next);
-    setPreviews(next.map((f) => URL.createObjectURL(f)));
-    setError(null);
+    if (!valid.length) {
+      setError("Please choose an image under 20 MB.");
+      return;
+    }
+
+    try {
+      const next = [...files, ...valid].slice(0, 6);
+      const nextPreviews = await Promise.all(next.map((file) => fileToDataUrl(file)));
+      setFiles(next);
+      setPreviews(nextPreviews);
+      setError(null);
+    } catch {
+      setError("Could not prepare the uploaded image preview for the report.");
+    }
   }
 
-  function removeFile(i: number) {
+  async function removeFile(i: number) {
     const next = files.filter((_, j) => j !== i);
-    previews.forEach((url) => URL.revokeObjectURL(url));
-    setFiles(next);
-    setPreviews(next.map((f) => URL.createObjectURL(f)));
+    try {
+      const nextPreviews = await Promise.all(next.map((file) => fileToDataUrl(file)));
+      setFiles(next);
+      setPreviews(nextPreviews);
+    } catch {
+      setError("Could not update the uploaded image preview.");
+    }
   }
 
   async function analyse() {
@@ -119,6 +168,7 @@ function ScanContent() {
       const measurementPayload = getMeasurementPayload(data);
       sessionStorage.setItem("scanResult", JSON.stringify({
         ...data,
+        originalEvidenceImage: evidenceImages[0],
         uploadedImage: evidenceImages[0],
         uploadedImages: evidenceImages,
         previewUrl: evidenceImages[0],
@@ -139,6 +189,7 @@ function ScanContent() {
       await new Promise((r) => setTimeout(r, 600));
       sessionStorage.setItem("scanResult", JSON.stringify({
         ...DEMO_RESULT,
+        originalEvidenceImage: evidenceImages[0],
         uploadedImage: evidenceImages[0],
         uploadedImages: evidenceImages,
         previewUrl: evidenceImages[0],
