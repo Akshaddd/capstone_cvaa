@@ -26,13 +26,10 @@ export default function DesktopLandingPage() {
         </div>
         <nav className="flex items-center gap-8">
           <a href="#how" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">How it works</a>
-          <a href="#about" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">About</a>
+          <a href="/d-about" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">About</a>
           <ThemeToggle />
           <a href="/d-login" className="text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">
             Sign in
-          </a>
-          <a href="/d-register" className="text-sm font-semibold bg-emerald-700 text-white px-4 py-2 rounded-xl hover:bg-emerald-800">
-            Get started
           </a>
         </nav>
       </header>
