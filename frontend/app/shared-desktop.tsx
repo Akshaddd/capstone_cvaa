@@ -144,8 +144,12 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
   return (
     <aside className="flex w-64 flex-shrink-0 flex-col h-screen sticky top-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100 dark:border-slate-800">
-        <div className="w-9 h-9 rounded-xl bg-emerald-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          M
+        <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+          <img
+            src="/myaccess-logo.jpeg"
+            alt="MyAccess logo"
+            className="h-full w-full object-contain p-1"
+          />
         </div>
         <div>
           <p className="font-semibold text-sm text-slate-900 dark:text-white">MyAccess</p>

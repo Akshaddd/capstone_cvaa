@@ -11,6 +11,7 @@ type Stop = {
 };
 
 const ALL_STOPS = rawStops as Stop[];
+const APP_LOGO_SRC = "/myaccess-logo.jpeg";
 
 const NEARBY = ALL_STOPS.filter(
   (s) => s.lat > -37.726 && s.lat < -37.700 && s.lng > 145.044 && s.lng < 145.062
@@ -39,6 +40,19 @@ export default function DesktopHomePage() {
         <PageHeader title="Operator dashboard" subtitle="Capture evidence and prepare DSAPT-linked accessibility assessments" />
 
         <main className="flex-1 p-6 flex flex-col gap-6">
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 flex items-center gap-4">
+            <img
+              src={APP_LOGO_SRC}
+              alt="MyAccess accessibility logo"
+              className="h-16 w-16 rounded-2xl object-contain bg-white p-1 border border-slate-200 dark:border-slate-700"
+            />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">MyAccess accessibility audit tool</p>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-1">Operator evidence capture dashboard</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Capture stop evidence, review nearby locations, and prepare DSAPT-linked accessibility assessments for compliance review.</p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-4 gap-4">
             {QUICK_ACTIONS.map((a) => (
