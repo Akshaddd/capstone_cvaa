@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Sidebar, PageHeader, PTV_NAV } from "../shared-desktop";
 
 const STATS = [
-  { val: "148", label: "Total stops", color: "text-slate-900 dark:text-white"          },
-  { val: "91%", label: "Compliance",  color: "text-emerald-700 dark:text-emerald-400"  },
-  { val: "23",  label: "Pending",     color: "text-yellow-600 dark:text-yellow-400"    },
-  { val: "7",   label: "Critical",    color: "text-red-600 dark:text-red-400"          },
+  { val: "148", label: "Reports received", color: "text-slate-900 dark:text-white"          },
+  { val: "91%", label: "Compliance confidence",  color: "text-emerald-700 dark:text-emerald-400"  },
+  { val: "23",  label: "Awaiting review",     color: "text-yellow-600 dark:text-yellow-400"    },
+  { val: "7",   label: "Critical actions",    color: "text-red-600 dark:text-red-400"          },
 ];
 
 interface StopReport {
@@ -43,7 +43,7 @@ function StopDetail({ report, onClose }: { report: StopReport; onClose: () => vo
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-8">
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg shadow-xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="font-bold text-slate-900 dark:text-white">Stop Report</h2>
+          <h2 className="font-bold text-slate-900 dark:text-white">Compliance review</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">x</button>
         </div>
         <div className="p-6 flex flex-col gap-4">
@@ -68,8 +68,8 @@ function StopDetail({ report, onClose }: { report: StopReport; onClose: () => vo
             </p>
           )}
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setAction("Report marked as resolved.")} className="flex-1 bg-emerald-700 text-white font-semibold text-sm py-2.5 rounded-xl hover:bg-emerald-800">Mark resolved</button>
-            <button onClick={() => setAction("Maintenance scheduled for this stop.")} className="flex-1 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Schedule maintenance</button>
+            <button onClick={() => setAction("Assessment approved for compliance record.")} className="flex-1 bg-emerald-700 text-white font-semibold text-sm py-2.5 rounded-xl hover:bg-emerald-800">Approve record</button>
+            <button onClick={() => setAction("Remediation action created for the operator team.")} className="flex-1 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Create action</button>
           </div>
         </div>
       </div>
@@ -82,10 +82,10 @@ export default function PtvDashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Sidebar nav={PTV_NAV} active="/d-ptv" user={{ initials: "PK", name: "P. Khanna", role: "PTV Operations" }} />
+      <Sidebar nav={PTV_NAV} active="/d-ptv" user={{ initials: "CO", name: "Compliance Officer", role: "Accessibility compliance" }} />
 
       <div className="flex flex-1 flex-col min-w-0">
-        <PageHeader title="Dashboard" subtitle="PTV · Melbourne network" />
+        <PageHeader title="Compliance dashboard" subtitle="Review submitted operator assessments and raise remediation actions" />
 
         <main className="flex-1 p-6 flex flex-col gap-6">
           <div className="grid grid-cols-4 gap-4">
@@ -104,7 +104,7 @@ export default function PtvDashboardPage() {
               {CRITICAL.length > 0 && (
                 <div className="bg-red-50 dark:bg-red-950 rounded-2xl border border-red-200 dark:border-red-800 overflow-hidden">
                   <div className="px-5 py-3 border-b border-red-200 dark:border-red-800">
-                    <p className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400">Critical — action required</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400">Critical compliance actions</p>
                   </div>
                   {CRITICAL.map((r, i) => (
                     <button key={r.id} onClick={() => setSelected(r)}
@@ -122,7 +122,7 @@ export default function PtvDashboardPage() {
 
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Active reports</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Submitted assessments awaiting review</p>
                 </div>
                 {ACTIVE.map((r, i) => (
                   <button key={r.id} onClick={() => setSelected(r)}
@@ -153,7 +153,7 @@ export default function PtvDashboardPage() {
               </div>
               <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">91%</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Current compliance · +3% this month</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Verified compliance confidence · +3% this month</p>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sidebar, PageHeader, USER_NAV } from "../shared-desktop";
+import { Sidebar, PageHeader, USER_NAV, COUNCIL_NAV, PTV_NAV } from "../shared-desktop";
 
 const STOP_STATUS_OVERRIDES_KEY = "myaccess_stop_status_overrides";
 type StopStatus = "mostly_accessible" | "partial_access" | "review_required";
@@ -607,11 +607,21 @@ function EvidencePanel({ images, scannedAt, stopName }: { images: string[]; scan
   );
 }
 
+function readCurrentRole(): "operator" | "compliance" | "council" {
+  if (typeof window === "undefined") return "operator";
+
+  const role = window.localStorage.getItem("myaccess_user_role");
+  if (role === "council" || role === "compliance" || role === "operator") return role;
+  return "operator";
+}
+
 export default function DesktopReportPage() {
   const [scan,    setScan]    = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<"operator" | "compliance" | "council">("operator");
 
   useEffect(() => {
+    setUserRole(readCurrentRole());
     try {
       const r = sessionStorage.getItem("scanResult");
       if (r) {
@@ -628,6 +638,13 @@ export default function DesktopReportPage() {
       <div className="w-7 h-7 border-[3px] border-emerald-700 border-t-transparent rounded-full animate-spin" />
     </div>
   );
+
+  const nav = userRole === "council" ? COUNCIL_NAV : userRole === "compliance" ? PTV_NAV : USER_NAV;
+  const sidebarUser = userRole === "council"
+    ? { initials: "SR", name: "S. Roberts", role: "City of Melbourne" }
+    : userRole === "compliance"
+      ? { initials: "CO", name: "Compliance Officer", role: "Accessibility compliance" }
+      : { initials: "OP", name: "Operator Team", role: "Network operator" };
 
   const raws = scan?.detections?.length ? scan.detections : FALLBACK;
 
@@ -667,19 +684,19 @@ export default function DesktopReportPage() {
     : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300";
 
   const plainSummary = isReviewDataset
-    ? `This evidence set shows ${passed} accessibility indicator${passed !== 1 ? "s" : ""} and ${warnings} item${warnings !== 1 ? "s" : ""} requiring closer operator review. No final compliance decision should be made from this output alone.`
+    ? `This evidence set shows ${passed} accessibility indicator${passed !== 1 ? "s" : ""} and ${warnings} item${warnings !== 1 ? "s" : ""} requiring closer compliance review. No final compliance decision should be made from this output alone.`
     : failed > 0
     ? `This assessment flagged ${failed} high-priority accessibility issue${failed > 1 ? "s" : ""} that may affect safe boarding${warnings > 0 ? `, plus ${warnings} item${warnings > 1 ? "s" : ""} requiring review` : ""}.`
     : warnings > 0
     ? `This assessment found no high-priority failures, but ${warnings} item${warnings > 1 ? "s" : ""} should be reviewed before the stop is marked as fully accessible.`
-    : "No issues were flagged across the checked visual indicators. Operator verification is still recommended before confirming compliance.";
+    : "No issues were flagged across the checked visual indicators. Compliance verification is still recommended before confirming compliance.";
 
   const measurement = getMeasurementResult(scan);
   const evidenceImages = getEvidenceImages(scan);
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Sidebar nav={USER_NAV} active="/d-reports" user={{ initials: "JD", name: "J. Doe", role: "Public user" }} />
+      <Sidebar nav={nav} active="/d-reports" user={sidebarUser} />
 
       <div className="flex flex-1 flex-col min-w-0">
         <PageHeader
@@ -687,7 +704,7 @@ export default function DesktopReportPage() {
           subtitle={`${stopMode} stop · ${reportId} · ${assessmentMode}`}
           actions={
             <div className="flex gap-2">
-              <a href="/d-ptv" className="text-sm font-semibold bg-emerald-700 text-white px-4 py-2 rounded-xl hover:bg-emerald-800">Submit for operator review</a>
+              <a href="/d-ptv" className="text-sm font-semibold bg-emerald-700 text-white px-4 py-2 rounded-xl hover:bg-emerald-800">Submit to compliance review</a>
               <a href="/d-scan" className="text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Start new assessment</a>
             </div>
           }

@@ -23,10 +23,10 @@ export default function PtvMaintenancePage() {
   const [done, setDone] = useState<string[]>([]);
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Sidebar nav={PTV_NAV} active="/d-ptv/maintenance" user={{ initials: "PK", name: "P. Khanna", role: "PTV Operations" }} />
+      <Sidebar nav={PTV_NAV} active="/d-ptv/maintenance" user={{ initials: "CO", name: "Compliance Officer", role: "Accessibility compliance" }} />
 
       <div className="flex flex-1 flex-col min-w-0">
-        <PageHeader title="Maintenance" subtitle="Scheduled jobs" />
+        <PageHeader title="Remediation queue" subtitle="Compliance actions raised from submitted accessibility assessments" />
 
         <main className="flex-1 p-6">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -38,7 +38,7 @@ export default function PtvMaintenancePage() {
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Location</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Due</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Priority</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Assigned</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Assigned team</th>
                   <th className="px-5 py-3" />
                 </tr>
               </thead>
@@ -56,9 +56,9 @@ export default function PtvMaintenancePage() {
                     <td className="px-5 py-3 text-slate-400 dark:text-slate-500">{m.assignee}</td>
                     <td className="px-5 py-3 text-right">
                       {done.includes(m.id) ? (
-                        <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Done ✓</span>
+                        <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Actioned ✓</span>
                       ) : (
-                        <button onClick={() => setDone((d) => [...d, m.id])} className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline">Mark done</button>
+                        <button onClick={() => setDone((d) => [...d, m.id])} className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline">Mark actioned</button>
                       )}
                     </td>
                   </tr>

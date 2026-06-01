@@ -218,12 +218,12 @@ export default function DesktopReportsPage() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Sidebar nav={USER_NAV} active="/d-reports" user={{ initials: "JD", name: "J. Doe", role: "Public user" }} />
+      <Sidebar nav={USER_NAV} active="/d-reports" user={{ initials: "OP", name: "Operator Team", role: "Network operator" }} />
 
       <div className="flex flex-1 flex-col min-w-0">
         <PageHeader
           title="Assessment history"
-          subtitle={`${reports.length} saved assessment${reports.length !== 1 ? "s" : ""} from recent stop scans`}
+          subtitle={`${reports.length} saved operator assessment${reports.length !== 1 ? "s" : ""} from recent evidence captures`}
           actions={
             <div className="flex items-center gap-3">
               <input
@@ -232,7 +232,7 @@ export default function DesktopReportsPage() {
                 placeholder="Search reports..."
                 className="w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
-              <a href="/d-scan" className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">New assessment</a>
+              <a href="/d-scan" className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">Capture evidence</a>
             </div>
           }
         />
@@ -260,8 +260,8 @@ export default function DesktopReportsPage() {
           {reports.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-20 text-center">
               <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No reports yet</p>
-              <p className="max-w-md text-sm text-slate-400 dark:text-slate-500 mb-6">Run a stop assessment to create a saved report history for operator review, follow-up checks and audit tracking.</p>
-              <a href="/d-scan" className="bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl hover:bg-emerald-800">Scan a stop</a>
+              <p className="max-w-md text-sm text-slate-400 dark:text-slate-500 mb-6">Capture stop evidence to create an operator assessment history for compliance review, follow-up checks and audit tracking.</p>
+              <a href="/d-scan" className="bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl hover:bg-emerald-800">Capture evidence</a>
             </div>
           ) : (
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">

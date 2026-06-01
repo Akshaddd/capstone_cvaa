@@ -265,12 +265,12 @@ export default function DesktopSavedPage() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Sidebar nav={USER_NAV} active="/d-saved" user={{ initials: "JD", name: "J. Doe", role: "Public user" }} />
+      <Sidebar nav={USER_NAV} active="/d-saved" user={{ initials: "OP", name: "Operator Team", role: "Network operator" }} />
 
       <div className="flex flex-1 flex-col min-w-0">
         <PageHeader
           title="Saved stops"
-          subtitle="Stops saved or recently assessed for follow-up review"
+          subtitle="Stops saved or recently assessed for operator follow-up review"
           actions={
             <div className="flex items-center gap-3">
               <input
@@ -279,7 +279,7 @@ export default function DesktopSavedPage() {
                 placeholder="Search saved stops..."
                 className="w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
-              <a href="/d-map" className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">Browse map</a>
+              <a href="/d-map" className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">Open network map</a>
             </div>
           }
         />
@@ -327,7 +327,7 @@ export default function DesktopSavedPage() {
                     <td className="px-5 py-4 text-slate-500 dark:text-slate-400">{formatDate(stop.lastAssessment)}</td>
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <a href={buildScanUrl(stop)} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800">Scan stop</a>
+                        <a href={buildScanUrl(stop)} className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800">Capture evidence</a>
                         <button
                           type="button"
                           onClick={() => removeStop(stop)}

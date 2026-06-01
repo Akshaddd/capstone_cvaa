@@ -72,7 +72,7 @@ function ScanContent() {
     const stopMeta = { id: stopId, name: stopName, mode: stopMode, status: stopStatus };
     const evidenceImages = [...previews];
     try {
-      setStatus("Analysing accessibility evidence...");
+      setStatus("Analysing operator evidence...");
       const form = new FormData();
       files.forEach((f) => { form.append("file", f); form.append("files", f); });
       const ctrl = new AbortController();
@@ -126,12 +126,12 @@ function ScanContent() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Sidebar nav={USER_NAV} active="/d-scan" user={{ initials: "JD", name: "J. Doe", role: "Public user" }} />
+      <Sidebar nav={USER_NAV} active="/d-scan" user={{ initials: "OP", name: "Operator Team", role: "Network operator" }} />
 
       <div className="flex flex-1 flex-col min-w-0">
         <PageHeader
           title="Audit evidence capture"
-          subtitle={stopName ? `${stopName}${stopMode ? ` · ${stopMode}` : ""}` : "Select a stop and upload visual evidence for assessment"}
+          subtitle={stopName ? `${stopName}${stopMode ? ` · ${stopMode}` : ""}` : "Select a stop and upload operator evidence for assessment"}
           actions={
             <div className="flex items-center gap-3">
               <a href="/d-map" className="text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">
@@ -146,7 +146,7 @@ function ScanContent() {
                     : "bg-emerald-700 text-white hover:bg-emerald-800"
                 }`}
               >
-                {loading ? "Analysing evidence..." : `Analyse ${files.length > 0 ? `${files.length} photo${files.length > 1 ? "s" : ""}` : "evidence"}`}
+                {loading ? "Analysing evidence..." : `Analyse ${files.length > 0 ? `${files.length} photo${files.length > 1 ? "s" : ""}` : "operator evidence"}`}
               </button>
             </div>
           }

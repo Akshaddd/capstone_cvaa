@@ -7,11 +7,14 @@ function getRouteForEmail(email: string) {
   const value = email.trim().toLowerCase();
 
   if (value.endsWith("@council.com")) return "/d-council";
-  if (value.endsWith("@operator.com")) return "/d-ptv";
+  if (value.endsWith("@compliance.com")) return "/d-ptv";
+  if (value.endsWith("@operator.com")) return "/d-home";
   if (value.endsWith("@user.com")) return "/d-home";
 
   const exactRoutes: Record<string, string> = {
+    "operator@myaccess.com": "/d-home",
     "user@myaccess.com": "/d-home",
+    "compliance@myaccess.com": "/d-ptv",
     "ptv@myaccess.com": "/d-ptv",
     "council@myaccess.com": "/d-council",
   };
@@ -30,9 +33,9 @@ export default function DesktopLoginPage() {
     const emailValue = email.trim().toLowerCase();
     const role = emailValue.endsWith("@council.com") || emailValue === "council@myaccess.com"
       ? "council"
-      : emailValue.endsWith("@operator.com") || emailValue === "ptv@myaccess.com"
-        ? "operator"
-        : "user";
+      : emailValue.endsWith("@compliance.com") || emailValue === "compliance@myaccess.com" || emailValue === "ptv@myaccess.com"
+        ? "compliance"
+        : "operator";
 
     window.localStorage.setItem("myaccess_user_role", role);
     window.localStorage.setItem("myaccess_user_email", emailValue);
@@ -58,7 +61,7 @@ export default function DesktopLoginPage() {
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Welcome back</h1>
-            <p className="text-sm text-slate-400 dark:text-slate-500">Sign in to your MyAccess account</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500">Sign in as an operator, compliance officer, or council reviewer</p>
           </div>
 
           <div className="flex flex-col gap-4">

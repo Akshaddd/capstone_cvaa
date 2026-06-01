@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Sidebar, StatusBadge, USER_NAV } from "../shared-desktop";
+import { Sidebar, StatusBadge, USER_NAV, COUNCIL_NAV, PTV_NAV } from "../shared-desktop";
 import rawStops from "../data/stops.json";
 
 type Stop = {
@@ -201,6 +201,7 @@ const LeafletMap = dynamic(() => import("../m-map/LeafletMap"), {
 
 const FILTERS = ["All", "Tram", "Bus", "Accessible", "Partial", "Review"];
 
+
 export default function DesktopMapPage() {
   const [filter,   setFilter]   = useState("All");
   const [selected, setSelected] = useState<Stop | null>(null);
@@ -208,7 +209,23 @@ export default function DesktopMapPage() {
   const [userLocation, setUserLocation] = useState<UserLocation>(null);
   const [locationStatus, setLocationStatus] = useState<"idle" | "locating" | "found" | "error">("idle");
 
+const [userRole, setUserRole] = useState<"operator" | "compliance" | "council">("operator");
+  const [roleReady, setRoleReady] = useState(false);
+
   const [statusOverrides, setStatusOverrides] = useState<Record<string, StopStatus>>({});
+
+  useLayoutEffect(() => {
+    const storedTheme = window.localStorage.getItem("theme");
+    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+
+    if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+      document.documentElement.classList.add("dark");
+    }
+
+    if (storedTheme === "light") {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   useEffect(() => {
     const refreshOverrides = () => setStatusOverrides(readStopStatusOverrides());
@@ -222,6 +239,34 @@ export default function DesktopMapPage() {
       window.removeEventListener("focus", refreshOverrides);
     };
   }, []);
+
+  useEffect(() => {
+    const readRole = () => {
+      const storedRole = window.localStorage.getItem("myaccess_user_role");
+      if (storedRole === "council" || storedRole === "operator" || storedRole === "compliance") {
+        setUserRole(storedRole);
+      } else {
+        setUserRole("operator");
+      }
+      setRoleReady(true);
+    };
+
+    readRole();
+    window.addEventListener("storage", readRole);
+    window.addEventListener("focus", readRole);
+
+    return () => {
+      window.removeEventListener("storage", readRole);
+      window.removeEventListener("focus", readRole);
+    };
+  }, []);
+
+  const nav = userRole === "council" ? COUNCIL_NAV : userRole === "compliance" ? PTV_NAV : USER_NAV;
+  const sidebarUser = userRole === "council"
+    ? { initials: "SR", name: "S. Roberts", role: "City of Melbourne" }
+    : userRole === "compliance"
+      ? { initials: "CO", name: "Compliance Officer", role: "Accessibility compliance" }
+      : { initials: "OP", name: "Operator Team", role: "Network operator" };
 
   const stopsWithStatus = useMemo(
     () => ALL_STOPS.map((stop) => {
@@ -298,7 +343,13 @@ export default function DesktopMapPage() {
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}
       className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
 
-      <Sidebar nav={USER_NAV} active="/d-map" user={{ initials: "JD", name: "J. Doe", role: "Public user" }} />
+      <div className="w-64 flex-shrink-0">
+        {roleReady ? (
+          <Sidebar nav={nav} active="/d-map" user={sidebarUser} />
+        ) : (
+          <aside className="flex w-64 flex-shrink-0 flex-col h-screen sticky top-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700" />
+        )}
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, overflow: "hidden" }}>
 

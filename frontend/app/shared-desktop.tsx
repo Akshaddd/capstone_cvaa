@@ -134,7 +134,14 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
             </button>
           )}
         </div>
-        <a href="/d-landing" className="text-xs text-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
+        <a
+          href="/d-landing"
+          onClick={() => {
+            window.localStorage.removeItem("myaccess_user_role");
+            window.localStorage.removeItem("myaccess_user_email");
+          }}
+          className="text-xs text-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+        >
           Sign out
         </a>
       </div>
@@ -174,18 +181,18 @@ export function StatusBadge({ status }: { status: "mostly_accessible" | "partial
 
 export const USER_NAV = [
   {
-    section: "Navigate",
+    section: "Operator tools",
     items: [
-      { label: "Home",        href: "/d-home"    },
-      { label: "Map",         href: "/d-map"     },
-      { label: "Scan a stop", href: "/d-scan"    },
+      { label: "Dashboard",          href: "/d-home"    },
+      { label: "Network map",        href: "/d-map"     },
+      { label: "Capture evidence",   href: "/d-scan"    },
     ],
   },
   {
-    section: "My data",
+    section: "Audit evidence",
     items: [
-      { label: "Past reports", href: "/d-reports" },
-      { label: "Saved stops",  href: "/d-saved"   },
+      { label: "Assessment history", href: "/d-reports" },
+      { label: "Saved stops",        href: "/d-saved"   },
     ],
   },
 ];
@@ -215,24 +222,24 @@ export const COUNCIL_NAV = [
 
 export const PTV_NAV = [
   {
-    section: "Overview",
+    section: "Compliance review",
     items: [
-      { label: "Dashboard",    href: "/d-ptv"              },
-      { label: "Stop reports", href: "/d-ptv/stops"        },
+      { label: "Dashboard",         href: "/d-ptv"              },
+      { label: "Submitted reports", href: "/d-ptv/stops"        },
     ],
   },
   {
-    section: "Operations",
+    section: "Actions",
     items: [
-      { label: "Routes",       href: "/d-ptv/routes"       },
-      { label: "Maintenance",  href: "/d-ptv/maintenance"  },
+      { label: "Routes",            href: "/d-ptv/routes"       },
+      { label: "Remediation queue", href: "/d-ptv/maintenance"  },
     ],
   },
   {
-    section: "Network",
+    section: "Network evidence",
     items: [
-      { label: "Map",          href: "/d-map"              },
-      { label: "Scan a stop",  href: "/d-scan"             },
+      { label: "Map",               href: "/d-map"              },
+      { label: "Review evidence",   href: "/d-scan"             },
     ],
   },
 ];
