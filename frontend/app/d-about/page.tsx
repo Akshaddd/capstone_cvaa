@@ -2,6 +2,8 @@
 
 import { ThemeToggle } from "../shared-desktop";
 
+const APP_LOGO_SRC = "/myaccess-logo.jpeg";
+
 const TEAM = [
   { name: "Pasan Jayarathna",  id: "21963056", role: "Risk Manager · Backend Dev",          initials: "PJ" },
   { name: "Akshad Shelar",     id: "22021511", role: "Compliance · Backend Dev",             initials: "AK" },
@@ -34,7 +36,13 @@ export default function AboutPage() {
       {/* Navbar */}
       <header className="sticky top-0 z-10 flex items-center justify-between max-w-7xl mx-auto px-8 py-5 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <a href="/d-landing" className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-emerald-700 rounded-xl flex items-center justify-center text-white font-bold text-sm">M</div>
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <img
+              src={APP_LOGO_SRC}
+              alt="MyAccess logo"
+              className="h-full w-full object-contain p-1"
+            />
+          </div>
           <span className="text-lg font-bold text-slate-900 dark:text-white">MyAccess</span>
         </a>
         <nav className="flex items-center gap-8">
@@ -52,6 +60,13 @@ export default function AboutPage() {
         <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">
           La Trobe University · Capstone Project · Team RSNA
         </span>
+        <div className="mb-6 flex justify-center">
+          <img
+            src={APP_LOGO_SRC}
+            alt="MyAccess accessibility logo"
+            className="h-24 w-24 rounded-3xl object-contain bg-white p-2 border border-slate-200 dark:border-slate-700 shadow-sm"
+          />
+        </div>
         <h1 className="text-5xl font-bold leading-tight text-slate-900 dark:text-white mb-6">
           Redefining Accessibility
         </h1>

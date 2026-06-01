@@ -2,6 +2,8 @@
 
 import { ThemeToggle } from "../shared-desktop";
 
+const APP_LOGO_SRC = "/myaccess-logo.jpeg";
+
 const HOW_IT_WORKS = [
   { step: "1", title: "Select a stop",  desc: "Search or browse a public transport location before starting an audit." },
   { step: "2", title: "Upload evidence", desc: "Add images captured from a phone, camera, or desktop device." },
@@ -21,7 +23,13 @@ export default function DesktopLandingPage() {
 
       <header className="sticky top-0 z-10 flex items-center justify-between max-w-7xl mx-auto px-8 py-5 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-emerald-700 rounded-xl flex items-center justify-center text-white font-bold text-sm">M</div>
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <img
+              src={APP_LOGO_SRC}
+              alt="MyAccess logo"
+              className="h-full w-full object-contain p-1"
+            />
+          </div>
           <span className="text-lg font-bold text-slate-900 dark:text-white">MyAccess</span>
         </div>
         <nav className="flex items-center gap-8">
@@ -39,6 +47,17 @@ export default function DesktopLandingPage() {
           <span className="inline-block bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
             Transport accessibility intelligence
           </span>
+          <div className="mb-6 flex items-center gap-4">
+            <img
+              src={APP_LOGO_SRC}
+              alt="MyAccess accessibility logo"
+              className="h-20 w-20 rounded-2xl object-contain bg-white p-2 border border-slate-200 dark:border-slate-700 shadow-sm"
+            />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">MyAccess</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Accessibility audit platform</p>
+            </div>
+          </div>
           <h1 className="text-5xl font-bold leading-tight text-slate-900 dark:text-white mb-6">
             Assess public transport accessibility using computer vision
           </h1>

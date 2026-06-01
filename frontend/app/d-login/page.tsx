@@ -1,6 +1,8 @@
 "use client";
 
+
 import { useState } from "react";
+const APP_LOGO_SRC = "/myaccess-logo.jpeg";
 
 
 function getRouteForEmail(email: string) {
@@ -74,13 +76,27 @@ export default function DesktopLoginPage() {
 
       <header className="px-8 py-5">
         <a href="/d-landing" className="flex items-center gap-2.5">
-          <div className="w-9 h-9 bg-emerald-700 rounded-xl flex items-center justify-center text-white font-bold text-sm">M</div>
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <img
+              src={APP_LOGO_SRC}
+              alt="MyAccess logo"
+              className="h-full w-full object-contain p-1"
+            />
+          </div>
           <span className="text-lg font-bold text-slate-900 dark:text-white">MyAccess</span>
         </a>
       </header>
 
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-8 py-10">
+
+          <div className="mb-6 flex justify-center">
+            <img
+              src={APP_LOGO_SRC}
+              alt="MyAccess accessibility logo"
+              className="h-20 w-20 rounded-2xl object-contain bg-white p-2 border border-slate-200 dark:border-slate-700 shadow-sm"
+            />
+          </div>
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Welcome back</h1>
