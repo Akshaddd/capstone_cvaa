@@ -60,14 +60,76 @@ type SidebarProps = {
   user: { initials: string; name: string; role: string };
 };
 
+function initialsFromName(name: string, fallback: string) {
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return initials || fallback;
+}
+
+function sessionUserFromStorage(fallback: SidebarProps["user"]) {
+  if (typeof window === "undefined") return fallback;
+
+  const role = window.localStorage.getItem("myaccess_user_role");
+  const name = window.localStorage.getItem("myaccess_user_name") || "";
+
+  if (role === "operator") {
+    const displayName = name || "Operator User";
+    return {
+      initials: initialsFromName(displayName, "OP"),
+      name: displayName,
+      role: "Network operator",
+    };
+  }
+
+  if (role === "compliance") {
+    const displayName = name || "Compliance Officer";
+    return {
+      initials: initialsFromName(displayName, "CO"),
+      name: displayName,
+      role: "Accessibility compliance",
+    };
+  }
+
+  if (role === "council") {
+    const displayName = name || "Council Reviewer";
+    return {
+      initials: initialsFromName(displayName, "CR"),
+      name: displayName,
+      role: "Council reviewer",
+    };
+  }
+
+  return fallback;
+}
+
 export function Sidebar({ nav, active, user }: SidebarProps) {
   const { toggle } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [dark, setDarkState] = useState(false);
+  const [sessionUser, setSessionUser] = useState(user);
   useEffect(() => {
+    const refreshSession = () => {
+      setSessionUser(sessionUserFromStorage(user));
+    };
+
     setMounted(true);
     setDarkState(document.documentElement.classList.contains("dark"));
-  }, []);
+    refreshSession();
+
+    window.addEventListener("storage", refreshSession);
+    window.addEventListener("focus", refreshSession);
+
+    return () => {
+      window.removeEventListener("storage", refreshSession);
+      window.removeEventListener("focus", refreshSession);
+    };
+  }, [user]);
 
   function handleToggle() {
     toggle();
@@ -112,11 +174,11 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
       <div className="px-3 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
         <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-slate-800 px-3 py-2.5">
           <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-            {user.initials}
+            {sessionUser.initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user.name}</p>
-            <p className="text-xs text-slate-400 dark:text-slate-500">{user.role}</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{sessionUser.name}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{sessionUser.role}</p>
           </div>
           {mounted && (
             <button onClick={handleToggle} aria-label="Toggle theme"
@@ -139,6 +201,7 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
           onClick={() => {
             window.localStorage.removeItem("myaccess_user_role");
             window.localStorage.removeItem("myaccess_user_email");
+            window.localStorage.removeItem("myaccess_user_name");
           }}
           className="text-xs text-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
         >

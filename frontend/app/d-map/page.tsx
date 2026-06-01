@@ -211,6 +211,7 @@ export default function DesktopMapPage() {
 
 const [userRole, setUserRole] = useState<"operator" | "compliance" | "council">("operator");
   const [roleReady, setRoleReady] = useState(false);
+  const [sessionName, setSessionName] = useState("");
 
   const [statusOverrides, setStatusOverrides] = useState<Record<string, StopStatus>>({});
 
@@ -243,6 +244,8 @@ const [userRole, setUserRole] = useState<"operator" | "compliance" | "council">(
   useEffect(() => {
     const readRole = () => {
       const storedRole = window.localStorage.getItem("myaccess_user_role");
+      const storedName = window.localStorage.getItem("myaccess_user_name") || "";
+      setSessionName(storedName);
       if (storedRole === "council" || storedRole === "operator" || storedRole === "compliance") {
         setUserRole(storedRole);
       } else {
@@ -262,11 +265,19 @@ const [userRole, setUserRole] = useState<"operator" | "compliance" | "council">(
   }, []);
 
   const nav = userRole === "council" ? COUNCIL_NAV : userRole === "compliance" ? PTV_NAV : USER_NAV;
+  const initials = sessionName
+    ? sessionName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()
+    : userRole === "council"
+      ? "CR"
+      : userRole === "compliance"
+        ? "CO"
+        : "OP";
+
   const sidebarUser = userRole === "council"
-    ? { initials: "SR", name: "S. Roberts", role: "City of Melbourne" }
+    ? { initials, name: sessionName || "Council Reviewer", role: "Council reviewer" }
     : userRole === "compliance"
-      ? { initials: "CO", name: "Compliance Officer", role: "Accessibility compliance" }
-      : { initials: "OP", name: "Operator Team", role: "Network operator" };
+      ? { initials, name: sessionName || "Compliance Officer", role: "Accessibility compliance" }
+      : { initials, name: sessionName || "Operator User", role: "Network operator" };
 
   const stopsWithStatus = useMemo(
     () => ALL_STOPS.map((stop) => {

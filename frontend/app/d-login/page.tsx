@@ -20,6 +20,19 @@ function getRouteForEmail(email: string) {
   return exactRoutes[value] ?? null;
 }
 
+function getDisplayNameFromEmail(email: string) {
+  const localPart = email.split("@")[0] ?? "";
+  const cleaned = localPart.replace(/[._-]+/g, " ").trim();
+
+  if (!cleaned) return "Operator User";
+
+  return cleaned
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default function DesktopLoginPage() {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
@@ -48,6 +61,7 @@ export default function DesktopLoginPage() {
 
     window.localStorage.setItem("myaccess_user_role", role);
     window.localStorage.setItem("myaccess_user_email", emailValue);
+    window.localStorage.setItem("myaccess_user_name", getDisplayNameFromEmail(emailValue));
     window.location.href = route;
   }
 
