@@ -134,7 +134,7 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
             </button>
           )}
         </div>
-        <a href="/m-landing" className="text-xs text-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
+        <a href="/d-landing" className="text-xs text-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
           Sign out
         </a>
       </div>

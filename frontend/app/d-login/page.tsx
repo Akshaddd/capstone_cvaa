@@ -2,11 +2,22 @@
 
 import { useState } from "react";
 
-const ROLE_ROUTES: Record<string, string> = {
-  "user@myaccess.com":    "/d-home",
-  "ptv@myaccess.com":     "/d-ptv",
-  "council@myaccess.com": "/d-council",
-};
+
+function getRouteForEmail(email: string) {
+  const value = email.trim().toLowerCase();
+
+  if (value.endsWith("@council.com")) return "/d-council";
+  if (value.endsWith("@operator.com")) return "/d-ptv";
+  if (value.endsWith("@user.com")) return "/d-home";
+
+  const exactRoutes: Record<string, string> = {
+    "user@myaccess.com": "/d-home",
+    "ptv@myaccess.com": "/d-ptv",
+    "council@myaccess.com": "/d-council",
+  };
+
+  return exactRoutes[value] ?? "/d-home";
+}
 
 export default function DesktopLoginPage() {
   const [email,    setEmail]    = useState("");
@@ -15,7 +26,17 @@ export default function DesktopLoginPage() {
 
   function handleSignIn() {
     if (!email.trim() || !password) { setError("Please enter your email and password."); return; }
-    window.location.href = ROLE_ROUTES[email.trim().toLowerCase()] ?? "/d-home";
+    const route = getRouteForEmail(email);
+    const emailValue = email.trim().toLowerCase();
+    const role = emailValue.endsWith("@council.com") || emailValue === "council@myaccess.com"
+      ? "council"
+      : emailValue.endsWith("@operator.com") || emailValue === "ptv@myaccess.com"
+        ? "operator"
+        : "user";
+
+    window.localStorage.setItem("myaccess_user_role", role);
+    window.localStorage.setItem("myaccess_user_email", emailValue);
+    window.location.href = route;
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -43,7 +64,7 @@ export default function DesktopLoginPage() {
           <div className="flex flex-col gap-4">
 
             <input
-              type="text"
+              type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(""); }}
               onKeyDown={handleKey}
