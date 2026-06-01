@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useState, useEffect, useLayoutEffect } from "react";
 
 export function useTheme() {
   const [dark, setDark] = useState<boolean>(() => {
@@ -101,7 +102,7 @@ function sessionUserFromStorage(fallback: SidebarProps["user"]) {
     return {
       initials: initialsFromName(displayName, "CR"),
       name: displayName,
-      role: "Council reviewer",
+      role: "City of Melbourne",
     };
   }
 
@@ -113,14 +114,18 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
   const [mounted, setMounted] = useState(false);
   const [dark, setDarkState] = useState(false);
   const [sessionUser, setSessionUser] = useState(user);
+
+  useLayoutEffect(() => {
+    setSessionUser(sessionUserFromStorage(user));
+    setDarkState(document.documentElement.classList.contains("dark"));
+    setMounted(true);
+  }, [user]);
+
   useEffect(() => {
     const refreshSession = () => {
       setSessionUser(sessionUserFromStorage(user));
+      setDarkState(document.documentElement.classList.contains("dark"));
     };
-
-    setMounted(true);
-    setDarkState(document.documentElement.classList.contains("dark"));
-    refreshSession();
 
     window.addEventListener("storage", refreshSession);
     window.addEventListener("focus", refreshSession);
@@ -155,7 +160,7 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
               {section.section}
             </p>
             {section.items.map((item) => (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
@@ -165,7 +170,7 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
                 }`}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
         ))}
@@ -196,7 +201,7 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
             </button>
           )}
         </div>
-        <a
+        <Link
           href="/d-landing"
           onClick={() => {
             window.localStorage.removeItem("myaccess_user_role");
@@ -206,7 +211,7 @@ export function Sidebar({ nav, active, user }: SidebarProps) {
           className="text-xs text-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
         >
           Sign out
-        </a>
+        </Link>
       </div>
     </aside>
   );
