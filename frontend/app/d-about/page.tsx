@@ -3,11 +3,11 @@
 import { ThemeToggle } from "../shared-desktop";
 
 const TEAM = [
-  { name: "Pasan Jayarathna",  id: "21963056", role: "Risk Manager · Backend Dev",      initials: "PJ", img: "/team/PJ.png" },
-  { name: "Akshad Shelar",     id: "22021511", role: "Compliance · Backend Dev",         initials: "AK", img: "/team/akshad.jpg" },
-  { name: "Pragna Guruprasad", id: "22282648", role: "Figma Designer · Frontend Dev",    initials: "PR", img: "/team/pragna.jpg" },
-  { name: "Nadil Silva",       id: "21963139", role: "ML Engineer · Backend Dev",        initials: "NA", img: "/team/nadil.jpg" },
-  { name: "Rui Hong Gan",      id: "22091871", role: "Security Engineer · Frontend Dev", initials: "RU", img: "/team/rui.jpg" },
+  { name: "Pasan Jayarathna",  id: "21963056", role: "Risk Manager · Backend Dev",          initials: "PJ", img: "/team/PJ.png" },
+  { name: "Akshad Shelar",     id: "22021511", role: "Compliance · Backend Dev",             initials: "AK", img: "/team/akshad.jpg" },
+  { name: "Pragna Guruprasad", id: "22282648", role: "Figma Designer · Frontend Dev",        initials: "PR", img: "/team/pragna.jpg" },
+  { name: "Nadil Silva",       id: "21963139", role: "ML Engineer · Backend Dev",            initials: "NA", img: "/team/nadil.jpg" },
+  { name: "Rui Hong Gan",      id: "22091871", role: "Security Engineer · Frontend Dev",     initials: "RU", img: "/team/rui.jpg" },
 ];
 
 const TECH = [
@@ -128,9 +128,13 @@ export default function AboutPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {TEAM.map((m) => (
               <div key={m.name} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-full bg-emerald-700 text-white font-bold text-lg flex items-center justify-center mb-4">
-                  {m.initials}
-                </div>
+                {m.img ? (
+                  <img src={m.img} alt={m.name} className="w-14 h-14 rounded-full object-cover mb-4" />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-emerald-700 text-white font-bold text-lg flex items-center justify-center mb-4">
+                    {m.initials}
+                  </div>
+                )}
                 <p className="font-semibold text-slate-900 dark:text-white text-sm mb-1">{m.name}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-1">{m.role}</p>
                 <p className="text-xs text-slate-300 dark:text-slate-600">{m.id}</p>
