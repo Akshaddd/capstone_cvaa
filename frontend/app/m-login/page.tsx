@@ -1,105 +1,50 @@
-export default function MobileLoginPage() {
+"use client";
+
+import { useState } from "react";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
-      <section className="h-[760px] w-[390px] overflow-hidden rounded-[36px] border border-slate-300 bg-white shadow-2xl">
-        {/* Status bar */}
-        <div className="flex items-center justify-between bg-white px-6 py-3">
-          <span className="text-sm font-semibold text-emerald-700">9:41</span>
-
-          <div className="flex items-center gap-2">
-            <svg width="16" height="11" viewBox="0 0 16 11" fill="#0D7A5F">
-              <rect x="0" y="3" width="3" height="8" rx="1" />
-              <rect x="4.5" y="2" width="3" height="9" rx="1" />
-              <rect x="9" y="0" width="3" height="11" rx="1" />
-              <rect x="13.5" y="1" width="2.5" height="10" rx="1" opacity=".3" />
-            </svg>
-
-            <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
-              <rect
-                x=".5"
-                y=".5"
-                width="21"
-                height="11"
-                rx="3.5"
-                stroke="#0D7A5F"
-                strokeOpacity=".35"
-              />
-              <rect x="2" y="2" width="16" height="8" rx="2" fill="#0D7A5F" />
-              <path d="M23 4.5v3a1.5 1.5 0 000-3z" fill="#0D7A5F" opacity=".4" />
+    <div className="min-h-dvh bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-5">
+      <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg overflow-hidden">
+        <div className="flex flex-col items-center px-8 pt-12 pb-6 text-center">
+          <div className="w-16 h-16 bg-emerald-700 rounded-2xl flex items-center justify-center shadow-md">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect x="2" y="8" width="18" height="12" rx="2.5" fill="white" />
+              <rect x="5" y="11" width="4" height="3" rx="0.8" fill="#047857" />
+              <rect x="11" y="11" width="4" height="3" rx="0.8" fill="#047857" />
+              <circle cx="7" cy="21" r="1.8" fill="white" />
+              <circle cx="15" cy="21" r="1.8" fill="white" />
+              <line x1="2" y1="21" x2="22" y2="21" stroke="white" strokeWidth="1.2" opacity=".5" />
+              <circle cx="23" cy="7" r="4" fill="white" />
+              <circle cx="23" cy="7" r="2" fill="#047857" />
             </svg>
           </div>
+          <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">MyAccess</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Melbourne accessibility network</p>
         </div>
 
-        {/* Logo */}
-        <div className="flex flex-col items-center px-8 pt-24 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-700 shadow-lg">
-            <svg width="30" height="30" viewBox="0 0 34 34" fill="none">
-              <rect x="5" y="9" width="20" height="14" rx="3" fill="white" />
-              <rect x="8" y="12" width="5" height="4" rx="1" fill="#0D7A5F" />
-              <rect x="15" y="12" width="5" height="4" rx="1" fill="#0D7A5F" />
-              <circle cx="10" cy="24" r="2" fill="white" />
-              <circle cx="20" cy="24" r="2" fill="white" />
-              <line
-                x1="4"
-                y1="24"
-                x2="26"
-                y2="24"
-                stroke="white"
-                strokeWidth="1.5"
-                opacity=".5"
-              />
-              <circle cx="27" cy="9" r="5" fill="white" />
-              <circle cx="27" cy="9" r="2.5" fill="#0D7A5F" />
-            </svg>
+        <div className="flex flex-col gap-4 px-8 pb-10">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoCapitalize="none" autoCorrect="off" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-base text-slate-900 dark:text-white outline-none focus:border-emerald-600" />
           </div>
 
-          <h1 className="mt-5 text-3xl font-bold text-slate-900">MyAccess</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Melbourne accessibility network
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-base text-slate-900 dark:text-white outline-none focus:border-emerald-600" />
+          </div>
+
+          <a href="/m-home" className="block w-full text-center bg-emerald-700 text-white font-bold text-base py-4 rounded-xl mt-1 active:bg-emerald-800">Sign in</a>
+
+          <p className="text-center text-sm text-slate-400 dark:text-slate-500">
+            Don&apos;t have an account?{" "}
+            <a href="/m-register" className="text-emerald-700 dark:text-emerald-400 font-semibold">Register</a>
           </p>
         </div>
-
-        {/* Form */}
-        <div className="mt-16 space-y-5 px-8">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Email address
-            </label>
-            <input
-              className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-700"
-              type="email"
-              placeholder="you@example.com"
-              readOnly
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Password
-            </label>
-            <input
-              className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-700"
-              type="password"
-              placeholder="••••••••"
-              readOnly
-            />
-            <p className="mt-2 text-right text-sm text-emerald-700">
-              Forgot password?
-            </p>
-          </div>
-
-          <button className="w-full rounded-2xl bg-emerald-700 py-3 font-semibold text-white shadow-md">
-            Continue
-          </button>
-
-          <p className="text-center text-sm text-slate-500">
-            No account?{" "}
-            <a href="#" className="font-medium text-emerald-700">
-              Create one for free
-            </a>
-          </p>
-        </div>
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

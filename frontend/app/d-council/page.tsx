@@ -1,255 +1,139 @@
-export default function CouncilDashboardPage() {
-  const reports: [string, string, string, string, string, string][] = [
-    ["#0341", "Broken kerb ramp", "Chapel St / Commercial Rd", "Stonnington", "1 day ago", "Active"],
-    ["#0340", "Missing tactile strip", "Bourke St Mall / Swanston", "CBD", "3 days ago", "Review"],
-    ["#0339", "No accessible path", "Smith St / Johnston St", "Fitzroy", "4 days ago", "Review"],
-    ["#0338", "Broken lift", "Flinders St Station", "CBD", "5 days ago", "Escalated"],
-    ["#0337", "New stop request", "Brunswick St / Gertrude", "Fitzroy", "6 days ago", "Submitted"],
-    ["#0336", "Signage illegible", "St Kilda Rd / Domain", "St Kilda", "1 week ago", "Resolved"],
-  ];
+"use client";
 
-  const areas: [string, number][] = [
-    ["CBD", 88],
-    ["Carlton", 82],
-    ["Fitzroy", 71],
-    ["Richmond", 68],
-    ["St Kilda", 65],
-    ["Footscray", 48],
-  ];
+import { useState } from "react";
+import { Sidebar, PageHeader, COUNCIL_NAV } from "../shared-desktop";
 
-  const chip = (status: string) => {
-    if (status === "Active" || status === "Resolved") return "bg-emerald-100 text-emerald-700";
-    if (status === "Review") return "bg-yellow-100 text-yellow-700";
-    if (status === "Escalated") return "bg-red-100 text-red-700";
-    return "bg-purple-100 text-purple-700";
-  };
+const STATS = [
+  { val: "342", label: "Public reports", color: "text-slate-900 dark:text-white"           },
+  { val: "78%", label: "Resolved",       color: "text-emerald-700 dark:text-emerald-400"   },
+  { val: "41",  label: "Under review",   color: "text-yellow-600 dark:text-yellow-400"     },
+  { val: "12",  label: "Escalated",      color: "text-red-600 dark:text-red-400"           },
+];
+
+interface Report {
+  id: string; title: string; location: string;
+  suburb: string; ago: string; status: string; note?: string;
+}
+
+const REPORTS: Report[] = [
+  { id: "RPT-001", title: "Broken kerb ramp",                 location: "Chapel St / Commercial Rd", suburb: "Stonnington", ago: "1 day ago",   status: "Active"    },
+  { id: "RPT-002", title: "Missing tactile strip",             location: "Bourke St Mall / Swanston", suburb: "CBD",         ago: "3 days ago",  status: "Review"    },
+  { id: "RPT-003", title: "No accessible path to stop",        location: "Smith St / Johnston St",    suburb: "Fitzroy",     ago: "4 days ago",  status: "Review"    },
+  { id: "RPT-004", title: "Broken lift — Flinders St Station", location: "Flinders St / Swanston St", suburb: "CBD",         ago: "5 days ago",  status: "Escalated", note: "Council action required" },
+  { id: "RPT-005", title: "Petition: Brunswick St stop",       location: "Brunswick St",              suburb: "Fitzroy",     ago: "6 days ago",  status: "28/50",     note: "Community support"       },
+  { id: "RPT-006", title: "Damaged boarding ramp",             location: "Swanston St / La Trobe St", suburb: "CBD",         ago: "1 week ago",  status: "Review"    },
+  { id: "RPT-007", title: "Signage obstruction",               location: "Elizabeth St / Collins St", suburb: "CBD",         ago: "1 week ago",  status: "Active"    },
+  { id: "RPT-008", title: "Broken shelter — stop 47",          location: "St Kilda Rd / Toorak Rd",   suburb: "Melbourne",   ago: "2 weeks ago", status: "Escalated" },
+];
+
+function statusChip(s: string) {
+  if (s === "Active")    return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300";
+  if (s === "Review")    return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
+  if (s === "Escalated") return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+  return "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300";
+}
+
+function ReportDetail({ report, onClose }: { report: Report; onClose: () => void }) {
+  const [action, setAction] = useState<string | null>(null);
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-8">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg shadow-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="font-bold text-slate-900 dark:text-white">Report Detail</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl leading-none">x</button>
+        </div>
+        <div className="p-6 flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">{report.title}</h3>
+            <span className={`flex-shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${statusChip(report.status)}`}>{report.status}</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {[
+              { label: "Location", val: report.location },
+              { label: "Suburb",   val: report.suburb   },
+              { label: "Reported", val: report.ago       },
+              { label: "ID",       val: report.id        },
+              ...(report.note ? [{ label: "Note", val: report.note }] : []),
+            ].map((row) => (
+              <div key={row.label} className="flex gap-3 py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <span className="text-sm text-slate-400 dark:text-slate-500 w-24 flex-shrink-0">{row.label}</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{row.val}</span>
+              </div>
+            ))}
+          </div>
+          {action && (
+            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-2.5">
+              {action}
+            </p>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setAction("Report marked as resolved.")} className="flex-1 bg-emerald-700 text-white font-semibold text-sm py-2.5 rounded-xl hover:bg-emerald-800">Mark resolved</button>
+            <button onClick={() => setAction("Report escalated to council.")} className="flex-1 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Escalate</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CouncilReportsPage() {
+  const [selected, setSelected] = useState<Report | null>(null);
 
   return (
-    <main className="flex min-h-screen bg-slate-100 text-slate-900">
-      <aside className="hidden w-72 flex-col border-r bg-white p-6 lg:flex">
-        <div>
-          <div className="mb-8 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-700 font-bold text-white">
-              M
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      <Sidebar nav={COUNCIL_NAV} active="/d-council" user={{ initials: "SR", name: "S. Roberts", role: "City of Melbourne" }} />
+
+      <div className="flex flex-1 flex-col min-w-0">
+        <PageHeader title="Public Reports" subtitle="City of Melbourne" />
+
+        <main className="flex-1 p-6 flex flex-col gap-6">
+          <div className="grid grid-cols-4 gap-4">
+            {STATS.map((s) => (
+              <div key={s.label} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+                <p className={`text-3xl font-bold ${s.color}`}>{s.val}</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="font-bold text-slate-900 dark:text-white">Active reports — newest first</h2>
             </div>
-            <div>
-              <p className="font-semibold">MyAccess</p>
-              <p className="text-xs text-slate-500">City of Melbourne</p>
-            </div>
-          </div>
-
-          <nav className="space-y-2 text-sm">
-            <p className="text-xs uppercase text-slate-400">Overview</p>
-            <div className="rounded-xl px-3 py-2 text-slate-600">Overview</div>
-            <div className="rounded-xl bg-purple-50 px-3 py-2 font-medium text-purple-700">
-              Public reports
-            </div>
-
-            <p className="pt-5 text-xs uppercase text-slate-400">Transparency</p>
-            <div className="rounded-xl px-3 py-2 text-slate-600">Published data</div>
-            <div className="rounded-xl px-3 py-2 text-slate-600">Transparency reports</div>
-
-            <p className="pt-5 text-xs uppercase text-slate-400">Insights</p>
-            <div className="rounded-xl px-3 py-2 text-slate-600">Area insights</div>
-            <div className="rounded-xl px-3 py-2 text-slate-600">Suburb rankings</div>
-
-            <p className="pt-5 text-xs uppercase text-slate-400">Community</p>
-            <div className="rounded-xl px-3 py-2 text-slate-600">Community view</div>
-            <div className="rounded-xl px-3 py-2 text-slate-600">Petitions</div>
-          </nav>
-        </div>
-
-        <div className="mt-auto flex items-center gap-3 border-t pt-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-semibold">
-            SR
-          </div>
-          <div>
-            <p className="text-sm font-medium">Sarah Reid</p>
-            <p className="text-xs text-slate-500">Council Officer</p>
-          </div>
-        </div>
-      </aside>
-
-      <section className="flex-1 space-y-6 p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Public Reports</h1>
-            <p className="text-sm text-slate-500">Community-submitted accessibility issues</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button className="rounded-xl border px-4 py-2 text-sm">Download report</button>
-            <button className="rounded-xl bg-purple-700 px-4 py-2 text-sm text-white">
-              Export CSV
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <p className="text-3xl font-bold text-purple-700">342</p>
-            <p className="text-sm text-slate-500">Public reports</p>
-            <p className="mt-1 text-xs text-slate-400">This quarter</p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <p className="text-3xl font-bold text-emerald-700">78%</p>
-            <p className="text-sm text-slate-500">Resolved rate</p>
-            <p className="mt-1 text-xs text-emerald-600">▲ 5% vs last quarter</p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <p className="text-3xl font-bold text-yellow-600">41</p>
-            <p className="text-sm text-slate-500">Under review</p>
-            <p className="mt-1 text-xs text-slate-400">Avg. 4.2 days</p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <p className="text-3xl font-bold text-red-600">12</p>
-            <p className="text-sm text-slate-500">Escalated</p>
-            <p className="mt-1 text-xs text-red-500">Council action required</p>
-          </div>
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-3">
-          <div className="rounded-3xl bg-white p-6 shadow-sm xl:col-span-2">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold">Public reports</h2>
-              <span className="text-sm text-purple-700">View all →</span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b text-left text-slate-500">
-                  <tr>
-                    <th className="pb-2">ID</th>
-                    <th className="pb-2">Issue</th>
-                    <th className="pb-2">Location</th>
-                    <th className="pb-2">Suburb</th>
-                    <th className="pb-2">Submitted</th>
-                    <th className="pb-2">Status</th>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-slate-800">
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Title</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Location</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Suburb</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Reported</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Status</th>
+                  <th className="px-5 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {REPORTS.map((r, i) => (
+                  <tr key={r.id} className={i < REPORTS.length - 1 ? "border-b border-slate-100 dark:border-slate-800" : ""}>
+                    <td className="px-5 py-3">
+                      <p className="font-medium text-slate-900 dark:text-white">{r.title}</p>
+                      {r.note && <p className="text-xs text-slate-400 dark:text-slate-500 italic mt-0.5">{r.note}</p>}
+                    </td>
+                    <td className="px-5 py-3 text-slate-500 dark:text-slate-400">{r.location}</td>
+                    <td className="px-5 py-3 text-slate-500 dark:text-slate-400">{r.suburb}</td>
+                    <td className="px-5 py-3 text-slate-400 dark:text-slate-500">{r.ago}</td>
+                    <td className="px-5 py-3"><span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusChip(r.status)}`}>{r.status}</span></td>
+                    <td className="px-5 py-3 text-right">
+                      <button onClick={() => setSelected(r)} className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline">View</button>
+                    </td>
                   </tr>
-                </thead>
-
-                <tbody className="divide-y">
-                  {reports.map((item) => (
-                    <tr key={item[0]}>
-                      <td className="py-3 font-medium">{item[0]}</td>
-                      <td>{item[1]}</td>
-                      <td>{item[2]}</td>
-                      <td>{item[3]}</td>
-                      <td className="text-slate-500">{item[4]}</td>
-                      <td>
-                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${chip(item[5])}`}>
-                          {item[5]}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="rounded-3xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 font-semibold">Area accessibility index</h2>
-
-              <div className="space-y-4">
-                {areas.map(([name, value]) => (
-                  <div key={name}>
-                    <div className="mb-1 flex justify-between text-sm">
-                      <span>{name}</span>
-                      <span>{value}%</span>
-                    </div>
-
-                    <div className="h-2 rounded-full bg-slate-200">
-                      <div
-                        className={`h-2 rounded-full ${
-                          value >= 80 ? "bg-emerald-700" : value >= 60 ? "bg-yellow-500" : "bg-red-500"
-                        }`}
-                        style={{ width: `${value}%` }}
-                      />
-                    </div>
-                  </div>
                 ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 font-semibold">Community activity</h2>
-
-              <div className="grid grid-cols-2 gap-3 text-center text-sm">
-                <div className="rounded-xl bg-slate-50 p-4">
-                  <p className="text-2xl font-bold text-purple-700">1,204</p>
-                  <p className="text-slate-500">Scans this month</p>
-                </div>
-
-                <div className="rounded-xl bg-slate-50 p-4">
-                  <p className="text-2xl font-bold text-purple-700">89</p>
-                  <p className="text-slate-500">Contributors</p>
-                </div>
-
-                <div className="rounded-xl bg-slate-50 p-4">
-                  <p className="text-2xl font-bold text-emerald-700">28</p>
-                  <p className="text-slate-500">Petition sigs</p>
-                </div>
-
-                <div className="rounded-xl bg-slate-50 p-4">
-                  <p className="text-2xl font-bold text-yellow-700">14</p>
-                  <p className="text-slate-500">Open petitions</p>
-                </div>
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
-        </div>
+        </main>
+      </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-semibold">Recent report activity</h2>
-
-            <div className="space-y-4 text-sm">
-              <div>
-                <p className="font-medium">Escalation — Broken lift at Flinders St Station</p>
-                <p className="text-slate-500">High-traffic location · Council escalation triggered · 5d ago</p>
-              </div>
-
-              <div>
-                <p className="font-medium">New petition — Accessible stop at Brunswick St</p>
-                <p className="text-slate-500">28 of 50 signatures · Open for community support · 6d ago</p>
-              </div>
-
-              <div>
-                <p className="font-medium">Resolved — Signage at St Kilda Rd / Domain</p>
-                <p className="text-slate-500">Community reported · Fixed by PTV contractor · 1w ago</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-semibold">Report type breakdown</h2>
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl bg-purple-50 p-4">
-                <p className="text-2xl font-bold text-purple-700">149</p>
-                <p className="text-slate-500">Infrastructure</p>
-              </div>
-              <div className="rounded-xl bg-red-50 p-4">
-                <p className="text-2xl font-bold text-red-600">88</p>
-                <p className="text-slate-500">Safety</p>
-              </div>
-              <div className="rounded-xl bg-yellow-50 p-4">
-                <p className="text-2xl font-bold text-yellow-600">60</p>
-                <p className="text-slate-500">Signage</p>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-2xl font-bold text-slate-600">45</p>
-                <p className="text-slate-500">Other</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
+      {selected && <ReportDetail report={selected} onClose={() => setSelected(null)} />}
+    </div>
   );
 }

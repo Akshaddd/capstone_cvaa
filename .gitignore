@@ -74,3 +74,4 @@ backend/outputs/combined_boxed_test2.jpg
 backend/outputs/combined_boxed_tram_test.jpg
 backend/outputs/combined_boxed_Transdev_10_flinders-station_003-1920x768.jpg
 >>>>>>> 81d2381 (feat: add tactile paving model and update inference logic)
+depth_output.jpg

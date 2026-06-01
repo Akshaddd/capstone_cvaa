@@ -8,6 +8,8 @@ from app.routers import inference
 
 router = APIRouter(prefix="/report", tags=["report"])
 
+submitted_reports = []
+
 @router.get("/test")
 def test_report():
     return {"message": "Report router is working"}
@@ -65,3 +67,18 @@ async def generate_report_from_image(file: UploadFile = File(...)):
         "boxed_image_path": boxed_image_path,
         "claude_assessment": claude_assessment,
     }
+
+
+@router.post("/submit")
+def submit_report(report: dict):
+    submitted_reports.insert(0, report)
+    return {
+        "status": "submitted",
+        "message": "Report submitted for compliance review",
+        "report": report,
+    }
+
+
+@router.get("/submitted")
+def get_submitted_reports():
+    return submitted_reports

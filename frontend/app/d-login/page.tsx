@@ -1,112 +1,174 @@
-export default function LoginPage() {
-  return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-white font-bold">
-            M
-          </div>
-          <span className="text-xl font-semibold">MyAccess</span>
-        </div>
+"use client";
 
-        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-600">
-          <a href="#">About</a>
-          <a href="#">How it works</a>
-          <a href="#">Contact</a>
-          <a
-            href="#"
-            className="rounded-xl bg-emerald-700 px-4 py-2 text-white font-medium"
-          >
-            Sign up free
-          </a>
-        </nav>
+
+import { useState } from "react";
+const APP_LOGO_SRC = "/myaccess-logo.jpeg";
+
+
+function getRouteForEmail(email: string) {
+  const value = email.trim();
+
+  if (value.endsWith("@council.com")) return "/d-council";
+  if (value.endsWith("@compliance.com")) return "/d-ptv";
+  if (value.endsWith("@operator.com")) return "/d-home";
+
+  const exactRoutes: Record<string, string> = {
+    "operator@myaccess.com": "/d-home",
+    "compliance@myaccess.com": "/d-ptv",
+    "ptv@myaccess.com": "/d-ptv",
+    "council@myaccess.com": "/d-council",
+  };
+
+  return exactRoutes[value] ?? null;
+}
+
+function getDisplayNameFromEmail(email: string) {
+  const localPart = email.split("@")[0] ?? "";
+  const cleaned = localPart.replace(/[._-]+/g, " ").trim();
+
+  if (!cleaned) return "Operator User";
+
+  return cleaned
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export default function DesktopLoginPage() {
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [error,    setError]    = useState("");
+
+  function handleSignIn() {
+    const emailValue = email.trim();
+
+    if (!emailValue || !password.trim()) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    const route = getRouteForEmail(emailValue);
+
+    if (!route) {
+      setError("Use a valid role email ending with @operator.com, @compliance.com, or @council.com.");
+      return;
+    }
+
+    const role = emailValue.endsWith("@council.com") || emailValue === "council@myaccess.com"
+      ? "council"
+      : emailValue.endsWith("@compliance.com") || emailValue === "compliance@myaccess.com" || emailValue === "ptv@myaccess.com"
+        ? "compliance"
+        : "operator";
+
+    window.localStorage.setItem("myaccess_user_role", role);
+    window.localStorage.setItem("myaccess_user_email", emailValue);
+    window.localStorage.setItem("myaccess_user_name", getDisplayNameFromEmail(emailValue));
+    window.location.href = route;
+  }
+
+  function handleKey(e: React.KeyboardEvent) {
+    if (e.key === "Enter") handleSignIn();
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+
+      <header className="px-8 py-5">
+        <a href="/d-landing" className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <img
+              src={APP_LOGO_SRC}
+              alt="MyAccess logo"
+              className="h-full w-full object-contain p-1"
+            />
+          </div>
+          <span className="text-lg font-bold text-slate-900 dark:text-white">MyAccess</span>
+        </a>
       </header>
 
-      <section className="mx-auto grid min-h-[calc(100vh-88px)] max-w-7xl items-center gap-12 px-6 lg:grid-cols-2">
-        <div>
-          <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
-            Melbourne public transport
-          </span>
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm px-8 py-10">
 
-          <h1 className="mt-6 text-4xl font-bold leading-tight md:text-6xl">
-            Make every stop accessible for everyone
-          </h1>
-
-          <p className="mt-5 max-w-xl text-lg text-slate-600">
-            Scan, report, and track accessibility features at tram stops across
-            Melbourne. Built for riders, PTV staff, and local councils.
-          </p>
-
-          <div className="mt-8 space-y-4 text-slate-700">
-            <div className="flex items-center gap-3">
-              <div className="h-2.5 w-2.5 rounded-full bg-emerald-700"></div>
-              <span>Scan stops and get instant accessibility scores</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-2.5 w-2.5 rounded-full bg-emerald-700"></div>
-              <span>View the accessibility map for your route</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-2.5 w-2.5 rounded-full bg-emerald-700"></div>
-              <span>Submit reports directly to PTV and council</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-2.5 w-2.5 rounded-full bg-emerald-700"></div>
-              <span>Real-time data for operators and administrators</span>
-            </div>
+          <div className="mb-6 flex justify-center">
+            <img
+              src={APP_LOGO_SRC}
+              alt="MyAccess accessibility logo"
+              className="h-20 w-20 rounded-2xl object-contain bg-white p-2 border border-slate-200 dark:border-slate-700 shadow-sm"
+            />
           </div>
-        </div>
 
-        <div className="rounded-3xl bg-white p-8 shadow-xl md:p-10">
-          <h2 className="text-3xl font-bold">Welcome back</h2>
-          <p className="mt-2 text-slate-500">
-            Sign in to your MyAccess account
-          </p>
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Welcome back</h1>
+            <p className="text-sm text-slate-400 dark:text-slate-500">Sign in as an operator, compliance officer, or council reviewer</p>
+          </div>
 
-          <div className="mt-8 space-y-5">
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Email address
-              </label>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-700"
-              />
-            </div>
+          <div className="flex flex-col gap-4">
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Password
-              </label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-700"
-              />
-              <p className="mt-2 text-right text-sm text-emerald-700">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(""); }}
+              onKeyDown={handleKey}
+              placeholder="Email"
+              autoCapitalize="none"
+              className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 outline-none focus:border-emerald-600 focus:bg-white dark:focus:bg-slate-900 transition-colors placeholder:text-slate-400"
+            />
+
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(""); }}
+              onKeyDown={handleKey}
+              placeholder="Password"
+              className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800 outline-none focus:border-emerald-600 focus:bg-white dark:focus:bg-slate-900 transition-colors placeholder:text-slate-400"
+            />
+
+            <div className="flex justify-end">
+              <a href="#" className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                 Forgot password?
-              </p>
+              </a>
             </div>
 
-            <button className="w-full rounded-xl bg-emerald-700 py-3 font-semibold text-white">
-              Continue
+            {error && (
+              <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                {error}
+              </p>
+            )}
+
+            <button
+              onClick={handleSignIn}
+              className="w-full bg-emerald-700 text-white font-semibold text-base py-3.5 rounded-full hover:bg-emerald-800 transition-colors mt-1"
+            >
+              Sign in
             </button>
-          </div>
 
-          <div className="my-6 h-px bg-slate-200"></div>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+              <span className="text-sm text-slate-400 dark:text-slate-500">or</span>
+              <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+            </div>
 
-          <p className="text-center text-sm text-slate-500">
-            No account?{" "}
-            <a href="#" className="font-medium text-emerald-700">
-              Create one for free
+            <a
+              href="/d-register"
+              className="w-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-base py-3.5 rounded-full text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              Create account
             </a>
-          </p>
+
+          </div>
         </div>
-      </section>
-    </main>
+      </div>
+
+      <footer className="px-8 py-6">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-400 dark:text-slate-500 justify-center">
+          <span>MyAccess &copy; {new Date().getFullYear()}</span>
+          <a href="#" className="hover:underline">Privacy</a>
+          <a href="#" className="hover:underline">Terms</a>
+          <a href="/d-landing" className="hover:underline">About</a>
+        </div>
+      </footer>
+
+    </div>
   );
 }
