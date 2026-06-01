@@ -380,18 +380,6 @@ const [userRole, setUserRole] = useState<"operator" | "compliance" | "council">(
             >
               {locationStatus === "locating" ? "Finding location..." : locationStatus === "found" ? "Location shown" : "Use device location"}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                const campusLocation = { lat: -37.7206, lng: 145.0486 };
-                setUserLocation(campusLocation);
-                selectNearestStop(campusLocation);
-                setLocationStatus("found");
-              }}
-              className="text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800"
-            >
-              Centre on La Trobe
-            </button>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
