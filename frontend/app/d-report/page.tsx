@@ -856,6 +856,43 @@ export default function DesktopReportPage() {
   const measurement = getMeasurementResult(scan);
   const evidenceImages = getEvidenceImages(scan);
 
+  const handleSubmitForCompliance = async () => {
+    const payload = {
+      id: reportId,
+      stopNumber: scan?.selectedStop?.id ?? "Unknown stop",
+      title: overallLabel,
+      location: stopName,
+      status: failed > 0 ? "Critical" : warnings > 0 ? "Review" : "Active",
+      submittedBy: "Operator Team",
+      submittedAt: new Date().toISOString(),
+      score,
+      summary: plainSummary,
+      detections: deduped,
+      measurements: measurement,
+      evidenceImages,
+      stop: scan?.selectedStop ?? null,
+    };
+
+    try {
+      const response = await fetch("http://localhost:8000/report/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit report");
+      }
+
+      alert("Report submitted to compliance review.");
+    } catch (error) {
+      console.error("Failed to submit report:", error);
+      alert("Could not submit report. Please make sure the backend is running.");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <Sidebar nav={nav} active="/d-reports" user={sidebarUser} />
@@ -866,7 +903,13 @@ export default function DesktopReportPage() {
           subtitle={`${stopMode} stop · ${reportId} · ${assessmentMode}`}
           actions={
             <div className="flex gap-2">
-              <a href="/d-ptv" className="text-sm font-semibold bg-emerald-700 text-white px-4 py-2 rounded-xl hover:bg-emerald-800">Submit to compliance review</a>
+              <button
+                type="button"
+                onClick={handleSubmitForCompliance}
+                className="text-sm font-semibold bg-emerald-700 text-white px-4 py-2 rounded-xl hover:bg-emerald-800"
+              >
+                Submit to compliance review
+              </button>
               <a href="/d-scan" className="text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">Start new assessment</a>
             </div>
           }
