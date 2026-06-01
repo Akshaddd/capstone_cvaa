@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar, PageHeader, PTV_NAV } from "../../shared-desktop";
 
 interface StopReport {
-  id: string; stopNumber: string; title: string;
-  location: string; ago: string;
+  id: string;
+  stopNumber: string;
+  title: string;
+  location: string;
+  ago: string;
   status: "Critical" | "Awaiting review" | "Action raised" | "Approved";
+  summary?: string;
+  score?: number;
+  submittedBy?: string;
 }
 
 const STOPS: StopReport[] = [
@@ -52,6 +58,24 @@ function StopDetail({ report, onClose }: { report: StopReport; onClose: () => vo
             <span className="text-sm text-slate-400 w-24">Submitted</span>
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{report.ago}</span>
           </div>
+          {report.submittedBy && (
+            <div className="flex gap-3 py-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-sm text-slate-400 w-24">Submitted by</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{report.submittedBy}</span>
+            </div>
+          )}
+          {typeof report.score === "number" && (
+            <div className="flex gap-3 py-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-sm text-slate-400 w-24">Score</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{report.score}%</span>
+            </div>
+          )}
+          {report.summary && (
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-4 py-3">
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1">Assessment summary</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">{report.summary}</p>
+            </div>
+          )}
           {action && (
             <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-2.5">
               {action}
@@ -70,6 +94,33 @@ function StopDetail({ report, onClose }: { report: StopReport; onClose: () => vo
 
 export default function PtvStopsPage() {
   const [selected, setSelected] = useState<StopReport | null>(null);
+  const [backendReports, setBackendReports] = useState<StopReport[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/report/submitted")
+      .then((res) => res.json())
+      .then((data) => {
+        const mapped: StopReport[] = data.map((r: any, index: number) => ({
+          id: r.id ?? `CR-BE-${index + 1}`,
+          stopNumber: r.stopNumber ?? r.stop?.id ?? "Submitted stop",
+          title: r.title ?? "Accessibility assessment submitted for review",
+          location: r.location ?? r.stop?.name ?? "Unknown location",
+          ago: "Just now",
+          status: r.status === "Critical" ? "Critical" : "Awaiting review",
+          summary: r.summary,
+          score: r.score,
+          submittedBy: r.submittedBy,
+        }));
+
+        setBackendReports(mapped);
+      })
+      .catch((error) => {
+        console.error("Failed to load submitted reports:", error);
+        setBackendReports([]);
+      });
+  }, []);
+
+  const reports = [...backendReports, ...STOPS];
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -92,8 +143,8 @@ export default function PtvStopsPage() {
                 </tr>
               </thead>
               <tbody>
-                {STOPS.map((r, i) => (
-                  <tr key={r.id} className={i < STOPS.length - 1 ? "border-b border-slate-100 dark:border-slate-800" : ""}>
+                {reports.map((r, i) => (
+                  <tr key={r.id} className={i < reports.length - 1 ? "border-b border-slate-100 dark:border-slate-800" : ""}>
                     <td className="px-5 py-3 font-medium text-slate-900 dark:text-white">{r.stopNumber}</td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{r.title}</td>
                     <td className="px-5 py-3 text-slate-400 dark:text-slate-500">{r.location}</td>
