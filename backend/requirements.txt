@@ -7,7 +7,7 @@ anyio==4.13.0
 h11==0.16.0
 typing-extensions==4.15.0
 
-ultralytics==8.4.58
+ultralytics==8.4.60
 ultralytics-thop==2.0.19
 torch==2.12.0
 torchvision==0.27.0
