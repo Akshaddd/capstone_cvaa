@@ -4,22 +4,20 @@ import { useState } from "react";
 
 
 function getRouteForEmail(email: string) {
-  const value = email.trim().toLowerCase();
+  const value = email.trim();
 
   if (value.endsWith("@council.com")) return "/d-council";
   if (value.endsWith("@compliance.com")) return "/d-ptv";
   if (value.endsWith("@operator.com")) return "/d-home";
-  if (value.endsWith("@user.com")) return "/d-home";
 
   const exactRoutes: Record<string, string> = {
     "operator@myaccess.com": "/d-home",
-    "user@myaccess.com": "/d-home",
     "compliance@myaccess.com": "/d-ptv",
     "ptv@myaccess.com": "/d-ptv",
     "council@myaccess.com": "/d-council",
   };
 
-  return exactRoutes[value] ?? "/d-home";
+  return exactRoutes[value] ?? null;
 }
 
 export default function DesktopLoginPage() {
@@ -28,9 +26,20 @@ export default function DesktopLoginPage() {
   const [error,    setError]    = useState("");
 
   function handleSignIn() {
-    if (!email.trim() || !password) { setError("Please enter your email and password."); return; }
-    const route = getRouteForEmail(email);
-    const emailValue = email.trim().toLowerCase();
+    const emailValue = email.trim();
+
+    if (!emailValue || !password.trim()) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    const route = getRouteForEmail(emailValue);
+
+    if (!route) {
+      setError("Use a valid role email ending with @operator.com, @compliance.com, or @council.com.");
+      return;
+    }
+
     const role = emailValue.endsWith("@council.com") || emailValue === "council@myaccess.com"
       ? "council"
       : emailValue.endsWith("@compliance.com") || emailValue === "compliance@myaccess.com" || emailValue === "ptv@myaccess.com"

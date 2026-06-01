@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Sidebar, PageHeader, USER_NAV } from "../shared-desktop";
+import { Sidebar, PageHeader, USER_NAV, COUNCIL_NAV, PTV_NAV } from "../shared-desktop";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -35,6 +35,14 @@ function getMeasurementPayload(data: Record<string, unknown>) {
     ?? null;
 }
 
+function readCurrentRole(): "operator" | "compliance" | "council" {
+  if (typeof window === "undefined") return "operator";
+
+  const role = window.localStorage.getItem("myaccess_user_role");
+  if (role === "council" || role === "compliance" || role === "operator") return role;
+  return "operator";
+}
+
 function ScanContent() {
   const params     = useSearchParams();
   const stopId     = params.get("id")     ?? "";
@@ -47,6 +55,33 @@ function ScanContent() {
   const [loading, setLoading] = useState(false);
   const [status,  setStatus]  = useState<string | null>(null);
   const [error,   setError]   = useState<string | null>(null);
+
+  const [userRole, setUserRole] = useState<"operator" | "compliance" | "council">("operator");
+
+  useEffect(() => {
+    const refreshRole = () => setUserRole(readCurrentRole());
+
+    refreshRole();
+    window.addEventListener("storage", refreshRole);
+    window.addEventListener("focus", refreshRole);
+
+    return () => {
+      window.removeEventListener("storage", refreshRole);
+      window.removeEventListener("focus", refreshRole);
+    };
+  }, []);
+
+  const nav = userRole === "council" ? COUNCIL_NAV : userRole === "compliance" ? PTV_NAV : USER_NAV;
+  const sidebarUser = userRole === "council"
+    ? { initials: "SR", name: "S. Roberts", role: "City of Melbourne" }
+    : userRole === "compliance"
+      ? { initials: "CO", name: "Compliance Officer", role: "Accessibility compliance" }
+      : { initials: "OP", name: "Operator Team", role: "Network operator" };
+
+  const pageTitle = userRole === "compliance" ? "Review submitted evidence" : "Audit evidence capture";
+  const fallbackSubtitle = userRole === "compliance"
+    ? "Review operator evidence and supporting accessibility indicators"
+    : "Select a stop and upload operator evidence for assessment";
 
   function handleFiles(list: FileList | null) {
     if (!list?.length) return;
@@ -126,12 +161,12 @@ function ScanContent() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Sidebar nav={USER_NAV} active="/d-scan" user={{ initials: "OP", name: "Operator Team", role: "Network operator" }} />
+      <Sidebar nav={nav} active="/d-scan" user={sidebarUser} />
 
       <div className="flex flex-1 flex-col min-w-0">
         <PageHeader
-          title="Audit evidence capture"
-          subtitle={stopName ? `${stopName}${stopMode ? ` · ${stopMode}` : ""}` : "Select a stop and upload operator evidence for assessment"}
+          title={pageTitle}
+          subtitle={stopName ? `${stopName}${stopMode ? ` · ${stopMode}` : ""}` : fallbackSubtitle}
           actions={
             <div className="flex items-center gap-3">
               <a href="/d-map" className="text-sm font-semibold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">
