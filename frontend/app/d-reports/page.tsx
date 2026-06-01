@@ -18,6 +18,19 @@ interface Report {
 
 
 const REPORT_HISTORY_KEY = "myaccess_report_history";
+const DELETED_REPORTS_KEY = "myaccess_deleted_reports";
+function readDeletedReports() {
+  if (typeof window === "undefined") return [] as string[];
+
+  try {
+    const raw = window.localStorage.getItem(DELETED_REPORTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed as string[] : [];
+  } catch {
+    return [];
+  }
+}
 
 function normalizeClassName(cls: string) {
   const lower = String(cls).toLowerCase().replace(/[\s-]+/g, "_");
@@ -127,10 +140,12 @@ function buildCurrentReport(): Report | null {
 function mergeReports(history: Report[], current: Report | null) {
   const combined = current ? [current, ...history] : history;
   const seen = new Set<string>();
+  const deleted = typeof window !== "undefined" ? new Set(readDeletedReports()) : new Set<string>();
 
   return combined
     .filter((report) => {
       const key = `${report.stopId ?? report.stopName}-${report.scannedAt}`;
+      if (deleted.has(key) || deleted.has(report.reportId)) return false;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -181,6 +196,25 @@ export default function DesktopReportsPage() {
     partial: reports.filter((report) => report.failed === 0 && report.warnings > 0).length,
     clear: reports.filter((report) => report.failed === 0 && report.warnings === 0).length,
   }), [reports]);
+
+  function removeReport(report: Report) {
+    const confirmed = window.confirm(`Remove report ${report.reportId} from history?`);
+    if (!confirmed) return;
+
+    const reportKey = `${report.stopId ?? report.stopName}-${report.scannedAt}`;
+    const deleted = new Set(readDeletedReports());
+    deleted.add(reportKey);
+    deleted.add(report.reportId);
+    window.localStorage.setItem(DELETED_REPORTS_KEY, JSON.stringify(Array.from(deleted)));
+
+    const nextReports = reports.filter((item) => {
+      const itemKey = `${item.stopId ?? item.stopName}-${item.scannedAt}`;
+      return itemKey !== reportKey && item.reportId !== report.reportId;
+    });
+
+    setReports(nextReports);
+    window.localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(nextReports));
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -279,7 +313,16 @@ export default function DesktopReportsPage() {
                         </td>
                         <td className="px-5 py-4"><span className={`text-xs font-bold px-2.5 py-1 rounded-full ${state.cls}`}>{state.label}</span></td>
                         <td className="px-5 py-4 text-right">
-                          <a href="/d-report" className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline">Open report</a>
+                          <div className="flex items-center justify-end gap-2">
+                            <a href="/d-report" className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800">Open report</a>
+                            <button
+                              type="button"
+                              onClick={() => removeReport(report)}
+                              className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-700 hover:border-red-200 dark:hover:bg-red-950 dark:hover:text-red-300 dark:hover:border-red-800"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
