@@ -44,7 +44,7 @@ function fileToDataUrl(file: File) {
       const img = new Image();
 
       img.onload = () => {
-        const maxWidth = 1100;
+        const maxWidth = 760;
         const scale = Math.min(1, maxWidth / img.width);
         const width = Math.round(img.width * scale);
         const height = Math.round(img.height * scale);
@@ -60,7 +60,7 @@ function fileToDataUrl(file: File) {
         }
 
         ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.78));
+        resolve(canvas.toDataURL("image/jpeg", 0.58));
       };
 
       img.onerror = () => reject(new Error("Could not load uploaded image."));
@@ -70,6 +70,85 @@ function fileToDataUrl(file: File) {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+function stripLargeImagePayloads(value: unknown): unknown {
+  if (typeof value === "string") {
+    if (value.startsWith("data:image/")) return undefined;
+    if (value.length > 200000) return undefined;
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(stripLargeImagePayloads).filter((item) => item !== undefined);
+  }
+
+  if (value && typeof value === "object") {
+    const cleaned: Record<string, unknown> = {};
+
+    Object.entries(value as Record<string, unknown>).forEach(([key, item]) => {
+      const lowerKey = key.toLowerCase();
+      const looksLikeImagePayload =
+        lowerKey.includes("image") ||
+        lowerKey.includes("preview") ||
+        lowerKey.includes("evidence") ||
+        lowerKey.includes("base64");
+
+      const cleanedItem = stripLargeImagePayloads(item);
+      if (cleanedItem === undefined && looksLikeImagePayload) return;
+      if (cleanedItem !== undefined) cleaned[key] = cleanedItem;
+    });
+
+    return cleaned;
+  }
+
+  return value;
+}
+
+function storeScanResultSafely(payload: Record<string, unknown>) {
+  const compactPayload = stripLargeImagePayloads(payload) as Record<string, unknown>;
+
+  const originalEvidenceImage =
+    typeof payload.originalEvidenceImage === "string" && payload.originalEvidenceImage.startsWith("data:image/")
+      ? payload.originalEvidenceImage
+      : undefined;
+
+  if (originalEvidenceImage) {
+    compactPayload.originalEvidenceImage = originalEvidenceImage;
+    compactPayload.uploadedImage = originalEvidenceImage;
+    compactPayload.previewUrl = originalEvidenceImage;
+    compactPayload.uploadedImages = [originalEvidenceImage];
+    compactPayload.evidenceImages = [originalEvidenceImage];
+  }
+
+  try {
+    sessionStorage.setItem("scanResult", JSON.stringify(compactPayload));
+    return;
+  } catch (error) {
+    console.warn("Could not store full scan result. Retrying with detection-only data.", error);
+  }
+
+  try {
+    sessionStorage.clear();
+    sessionStorage.setItem(
+      "scanResult",
+      JSON.stringify({
+        detections: compactPayload.detections,
+        measurements: compactPayload.measurements,
+        measurement: compactPayload.measurement,
+        depth: compactPayload.depth,
+        depth_estimation: compactPayload.depth_estimation,
+        depthEstimate: compactPayload.depthEstimate,
+        depth_result: compactPayload.depth_result,
+        measurement_result: compactPayload.measurement_result,
+        selectedStop: compactPayload.selectedStop,
+        scannedAt: compactPayload.scannedAt,
+        _demo: compactPayload._demo,
+      })
+    );
+  } catch (error) {
+    console.error("Could not store scan result even after compaction.", error);
+  }
 }
 
 function readCurrentRole(): "operator" | "compliance" | "council" {
@@ -155,6 +234,17 @@ function ScanContent() {
     setLoading(true); setError(null);
     const stopMeta = { id: stopId, name: stopName, mode: stopMode, status: stopStatus };
     const evidenceImages = [...previews];
+    const originalEvidenceImage = evidenceImages[0];
+
+    if (originalEvidenceImage) {
+      try {
+        sessionStorage.setItem("originalEvidenceImage", originalEvidenceImage);
+        localStorage.setItem("originalEvidenceImage", originalEvidenceImage);
+      } catch (error) {
+        console.warn("Could not store original evidence image preview.", error);
+      }
+    }
+
     try {
       setStatus("Analysing operator evidence...");
       const form = new FormData();
@@ -166,13 +256,13 @@ function ScanContent() {
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       const measurementPayload = getMeasurementPayload(data);
-      sessionStorage.setItem("scanResult", JSON.stringify({
+      storeScanResultSafely({
         ...data,
-        originalEvidenceImage: evidenceImages[0],
-        uploadedImage: evidenceImages[0],
-        uploadedImages: evidenceImages,
-        previewUrl: evidenceImages[0],
-        evidenceImages,
+        originalEvidenceImage,
+        uploadedImage: originalEvidenceImage,
+        uploadedImages: originalEvidenceImage ? [originalEvidenceImage] : [],
+        previewUrl: originalEvidenceImage,
+        evidenceImages: originalEvidenceImage ? [originalEvidenceImage] : [],
         measurements: measurementPayload,
         measurement: measurementPayload,
         depth: measurementPayload,
@@ -183,17 +273,17 @@ function ScanContent() {
         selectedStop: stopMeta,
         scannedAt: new Date().toISOString(),
         _demo: false,
-      }));
+      });
     } catch {
       setStatus("Live scan unavailable — preparing a review-ready assessment...");
       await new Promise((r) => setTimeout(r, 600));
-      sessionStorage.setItem("scanResult", JSON.stringify({
+      storeScanResultSafely({
         ...DEMO_RESULT,
-        originalEvidenceImage: evidenceImages[0],
-        uploadedImage: evidenceImages[0],
-        uploadedImages: evidenceImages,
-        previewUrl: evidenceImages[0],
-        evidenceImages,
+        originalEvidenceImage,
+        uploadedImage: originalEvidenceImage,
+        uploadedImages: originalEvidenceImage ? [originalEvidenceImage] : [],
+        previewUrl: originalEvidenceImage,
+        evidenceImages: originalEvidenceImage ? [originalEvidenceImage] : [],
         measurements: null,
         measurement: null,
         depth: null,
@@ -203,7 +293,7 @@ function ScanContent() {
         measurement_result: null,
         selectedStop: stopMeta,
         scannedAt: new Date().toISOString(),
-      }));
+      });
     } finally {
       setLoading(false); setStatus(null);
       window.location.href = "/d-report";

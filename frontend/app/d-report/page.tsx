@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sidebar, PageHeader, USER_NAV, COUNCIL_NAV, PTV_NAV } from "../shared-desktop";
 
 const STOP_STATUS_OVERRIDES_KEY = "myaccess_stop_status_overrides";
@@ -148,6 +148,7 @@ interface MeasurementResult {
   annotated_image_path?: string;
   [key: string]: unknown;
 }
+
 
 function normalizeClassName(cls: string) {
   const key = cls.toLowerCase().trim().replace(/[\s-]+/g, "_");
@@ -355,28 +356,46 @@ function normaliseImagePath(path: unknown) {
 }
 
 function getEvidenceImages(scan: ScanResult | null) {
-  const originalCandidates = [
+  const uploadedOnlyCandidates = [
     scan?.originalEvidenceImage,
     scan?.uploadedImage,
     scan?.uploaded_image,
     scan?.previewUrl,
     scan?.preview_url,
     scan?.filePreview,
-    scan?.imageUrl,
-    scan?.image_url,
-    scan?.original_image_path,
-    ...(Array.isArray(scan?.images) ? scan.images : []),
-    ...(Array.isArray(scan?.evidenceImages) ? scan.evidenceImages : []),
     ...(Array.isArray(scan?.uploadedImages) ? scan.uploadedImages : []),
   ];
 
-  const boxedFallbackCandidates = [scan?.boxed_image_path];
+  const possibleOriginalPathCandidates = [
+    scan?.original_image_path,
+  ];
 
-  const normaliseList = (items: unknown[]) => {
+  const annotatedFallbackCandidates = [
+    scan?.imageUrl,
+    scan?.image_url,
+    ...(Array.isArray(scan?.images) ? scan.images : []),
+    ...(Array.isArray(scan?.evidenceImages) ? scan.evidenceImages : []),
+    scan?.boxed_image_path,
+  ];
+
+  const isAnnotatedOrBoxed = (src: string) => {
+    const lower = src.toLowerCase();
+    return (
+      lower.includes("boxed") ||
+      lower.includes("annotated") ||
+      lower.includes("detection") ||
+      lower.includes("prediction") ||
+      lower.includes("bbox") ||
+      lower.includes("bounding")
+    );
+  };
+
+  const normaliseList = (items: unknown[], allowAnnotated = false) => {
     const seen = new Set<string>();
     return items
       .map(normaliseImagePath)
       .filter((src): src is string => Boolean(src))
+      .filter((src) => allowAnnotated || !isAnnotatedOrBoxed(src))
       .filter((src) => {
         if (seen.has(src)) return false;
         seen.add(src);
@@ -384,10 +403,15 @@ function getEvidenceImages(scan: ScanResult | null) {
       });
   };
 
-  const originals = normaliseList(originalCandidates);
-  if (originals.length > 0) return originals;
+  const uploadedOriginals = normaliseList(uploadedOnlyCandidates);
+  if (uploadedOriginals.length > 0) return uploadedOriginals;
 
-  return normaliseList(boxedFallbackCandidates);
+  const originalPaths = normaliseList(possibleOriginalPathCandidates);
+  if (originalPaths.length > 0) return originalPaths;
+
+  // Last-resort fallback only. The UI should prefer the operator-uploaded evidence image,
+  // but this keeps the panel from going blank if an old scan only stored backend output paths.
+  return normaliseList(annotatedFallbackCandidates, true);
 }
 
 
@@ -588,7 +612,7 @@ function EvidencePanel({ images, scannedAt, stopName }: { images: string[]; scan
       {hasImages ? (
         <div className="space-y-3">
           <a href={images[0]} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
-            <img src={images[0]} alt={`Uploaded audit evidence for ${stopName}`} className="h-56 w-full object-cover transition-transform duration-200 hover:scale-[1.02]" />
+            <img src={images[0]} alt={`Uploaded audit evidence for ${stopName}`} className="max-h-72 w-full object-contain bg-slate-950/5 dark:bg-slate-950 transition-transform duration-200 hover:scale-[1.01]" />
           </a>
 
           {images.length > 1 && (
@@ -781,6 +805,10 @@ export default function DesktopReportPage() {
   const [scan,    setScan]    = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<"operator" | "compliance" | "council">("operator");
+  const reportId = useMemo(
+    () => `RPT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+    []
+  );
 
   useEffect(() => {
     setUserRole(readCurrentRole());
@@ -835,7 +863,6 @@ export default function DesktopReportPage() {
   const stopName = scan?.selectedStop?.name ?? "Selected Stop";
   const stopMode = scan?.selectedStop?.mode ?? "transport";
   const profile  = getProfile(deduped);
-  const reportId = `RPT-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
   const assessmentMode = isReviewDataset ? "Evidence review" : "Live scan";
 
   const overallLabel = failed > 0 ? "Review required" : warnings > 0 ? "Action recommended" : "No issues flagged";
@@ -855,6 +882,150 @@ export default function DesktopReportPage() {
 
   const measurement = getMeasurementResult(scan);
   const evidenceImages = getEvidenceImages(scan);
+
+  const handleDownloadPdf = async () => {
+    // Use jsPDF directly instead of html2canvas/html2pdf.
+    // html2canvas can crash on Tailwind/Next CSS that contains modern oklch() colours.
+    // This keeps the presentation PDF stable and avoids reading app CSS.
+    // @ts-ignore jspdf is installed for the existing report export flow.
+    const { default: jsPDF } = await import("jspdf");
+
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 42;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 42;
+
+    const addPageIfNeeded = (needed = 40) => {
+      if (y + needed > pageHeight - 48) {
+        doc.addPage();
+        y = 42;
+      }
+    };
+
+    const text = (value: string, x: number, nextY: number, options?: { size?: number; bold?: boolean; color?: [number, number, number]; width?: number }) => {
+      addPageIfNeeded(24);
+      doc.setFont("helvetica", options?.bold ? "bold" : "normal");
+      doc.setFontSize(options?.size ?? 10);
+      const color = options?.color ?? [15, 23, 42];
+      doc.setTextColor(color[0], color[1], color[2]);
+      const lines = doc.splitTextToSize(value, options?.width ?? contentWidth);
+      doc.text(lines, x, nextY);
+      y = nextY + lines.length * ((options?.size ?? 10) + 4);
+    };
+
+    const section = (title: string) => {
+      addPageIfNeeded(42);
+      y += 12;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 22;
+      text(title, margin, y, { size: 13, bold: true });
+    };
+
+    doc.setDrawColor(4, 120, 87);
+    doc.setLineWidth(3);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 24;
+
+    text("MYACCESS · ACCESSIBILITY AUDIT TOOL", margin, y, { size: 9, bold: true, color: [4, 120, 87] });
+    text("Accessibility Assessment Report", margin, y + 18, { size: 20, bold: true });
+    text(`${stopName} · ${stopMode} stop · ${reportId} · ${assessmentMode}`, margin, y + 22, { size: 10, color: [71, 85, 105] });
+
+    y += 24;
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, y, contentWidth, 70, 8, 8, "F");
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("OVERALL SCORE", margin + 16, y + 20);
+    doc.text("STATUS", margin + 150, y + 20);
+    doc.text("DETECTED", margin + 310, y + 20);
+    doc.text("NEEDS REVIEW", margin + 430, y + 20);
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(18);
+    doc.text(String(score), margin + 16, y + 48);
+    doc.setFontSize(12);
+    doc.text(overallLabel, margin + 150, y + 46);
+    doc.setFontSize(18);
+    doc.text(String(passed), margin + 310, y + 48);
+    doc.text(String(warnings + failed), margin + 430, y + 48);
+    y += 86;
+
+    section("Executive summary");
+    text(plainSummary, margin, y, { size: 10 });
+
+    section("DSAPT-linked observations");
+    deduped.forEach((d) => {
+      const entry = getEntry(d.class);
+      const status = getStatus(d.confidence, d.class);
+      const confidence = Math.round(d.confidence * 100);
+      const finding = d.inferredMissing
+        ? "This evidence item was not confirmed in the uploaded image and should be checked manually."
+        : status === "Detected"
+          ? entry.passNote
+          : entry.failNote;
+
+      addPageIfNeeded(86);
+      text(`${entry.name} · ${entry.clause}`, margin, y, { size: 11, bold: true });
+      text(`${severityLabel(entry.severity)} · ${status} · ${confidence}% confidence`, margin, y, { size: 9, color: [100, 116, 139] });
+      text(`Finding: ${finding}`, margin, y, { size: 9 });
+      text(`Action: ${d.inferredMissing ? "Capture an additional clear photo focused on this feature before confirming accessibility status." : entry.action}`, margin, y, { size: 9 });
+      y += 6;
+    });
+
+    section("Passenger impact estimate");
+    profile.forEach((item) => {
+      addPageIfNeeded(48);
+      text(`${item.label} · ${item.suitable ? "Likely supported" : "Review needed"}`, margin, y, { size: 10, bold: true });
+      text(item.reason, margin, y, { size: 9, color: [71, 85, 105] });
+    });
+
+    section("Experimental measurement support");
+    const measurementRows = getFlexibleMeasurementRows(measurement);
+    if (measurementRows.length > 0) {
+      measurementRows.forEach((row) => {
+        text(`${row.label}: ${formatMeasurementValue(row.value)} ${row.unit}`, margin, y, { size: 10 });
+      });
+    } else {
+      text(summariseUnknownMeasurements(measurement) ?? "No stable calibrated measurement values were returned. Manual verification is required before compliance decisions.", margin, y, { size: 10 });
+    }
+
+    section("Uploaded evidence");
+    if (evidenceImages.length > 0) {
+      try {
+        const imageFormat = getPdfImageFormat(evidenceImages[0]);
+        const imageProps = doc.getImageProperties(evidenceImages[0]);
+
+        const maxImageWidth = contentWidth;
+
+        const maxImageHeight = 310;
+
+        const imageScale = Math.min(maxImageWidth / imageProps.width, maxImageHeight / imageProps.height);
+
+        const imageWidth = imageProps.width * imageScale;
+
+        const imageHeight = imageProps.height * imageScale;
+
+        const imageX = margin + (contentWidth - imageWidth) / 2;
+
+        addPageIfNeeded(imageHeight + 28);
+        doc.addImage(evidenceImages[0], imageFormat, imageX, y, imageWidth, imageHeight, undefined, "FAST");
+        y += imageHeight + 24;
+      } catch (error) {
+        console.warn("Could not embed evidence image in PDF export.", error);
+        text("Uploaded evidence image was captured for this assessment, but it could not be embedded in the PDF export.", margin, y, { size: 10 });
+      }
+    } else {
+      text("No uploaded evidence preview was available in this session.", margin, y, { size: 10 });
+    }
+
+    section("Compliance note");
+    text("This report is generated from AI-supported visual assessment and selected DSAPT-linked indicators. It is not a final legal compliance verdict. Findings, measurements, and passenger impact estimates must be verified by a qualified reviewer before remediation or formal compliance decisions.", margin, y, { size: 9, color: [71, 85, 105] });
+
+    doc.save(`${reportId}-accessibility-assessment.pdf`);
+  };
 
   const handleSubmitForCompliance = async () => {
     const payload = {
@@ -903,6 +1074,14 @@ export default function DesktopReportPage() {
           subtitle={`${stopMode} stop · ${reportId} · ${assessmentMode}`}
           actions={
             <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={!scan}
+                className="text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Download PDF
+              </button>
               <button
                 type="button"
                 onClick={handleSubmitForCompliance}
